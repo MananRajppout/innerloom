@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/app_info.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_motion.dart';
-import '../../theme/app_spacing.dart';
-import '../../widgets/future_self_orb.dart';
+import '../../../core/constants/app_info.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_durations.dart';
+import '../../../theme/app_spacing.dart';
+import '../../future_self/widgets/future_self_orb.dart';
 
 /// The room you enter.
 ///
@@ -26,7 +26,6 @@ class HomeScreen extends StatelessWidget {
           child: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               return SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Column(
@@ -39,14 +38,16 @@ class HomeScreen extends StatelessWidget {
                         ),
                         child: Center(
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 440),
+                            constraints: const BoxConstraints(
+                              maxWidth: AppSpacing.content,
+                            ),
                             child: TweenAnimationBuilder<double>(
                               tween: Tween<double>(begin: 0, end: 1),
-                              duration: AppMotion.resolve(
+                              duration: AppDurations.resolve(
                                 context,
-                                AppMotion.entrance,
+                                AppDurations.entrance,
                               ),
-                              curve: AppMotion.curve,
+                              curve: AppDurations.curve,
                               builder:
                                   (
                                     BuildContext context,
@@ -72,8 +73,9 @@ class HomeScreen extends StatelessWidget {
                                       BoxConstraints orbConstraints,
                                     ) {
                                       final double diameter = math.min(
-                                        156,
-                                        orbConstraints.maxWidth / 2.2,
+                                        FutureSelfOrb.restingDiameter,
+                                        orbConstraints.maxWidth /
+                                            FutureSelfOrb.glowFactor,
                                       );
                                       return FutureSelfOrb(
                                         diameter: diameter,

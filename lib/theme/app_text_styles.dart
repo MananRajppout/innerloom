@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// Fraunces is a soft serif, closer to a journal than to a product UI.
 /// Nunito Sans stays readable and warm at small sizes.
-abstract final class AppTypography {
+abstract final class AppTextStyles {
   static const String displayFamily = 'Fraunces';
   static const String textFamily = 'NunitoSans';
 

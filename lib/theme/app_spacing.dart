@@ -12,4 +12,7 @@ abstract final class AppSpacing {
 
   /// Horizontal inset for a screen's quiet margin.
   static const double screen = 28;
+
+  /// Widest a quiet column should grow, so a desktop window stays held.
+  static const double content = 440;
 }

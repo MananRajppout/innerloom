@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-import '../theme/app_motion.dart';
+import '../../../theme/app_colors.dart';
+import '../../../theme/app_durations.dart';
 
 /// Future Self, as presence.
 ///
@@ -9,9 +9,15 @@ import '../theme/app_motion.dart';
 class FutureSelfOrb extends StatefulWidget {
   const FutureSelfOrb({
     super.key,
-    this.diameter = 156,
+    this.diameter = restingDiameter,
     this.semanticLabel = 'Future Self',
   });
+
+  /// Core size when the screen has room for the full presence.
+  static const double restingDiameter = 156;
+
+  /// How far the glow extends past the core, as a multiple of [restingDiameter].
+  static const double glowFactor = 2.15;
 
   /// Diameter of the core. The glow extends past it.
   final double diameter;
@@ -25,9 +31,17 @@ class FutureSelfOrb extends StatefulWidget {
 
 class _FutureSelfOrbState extends State<FutureSelfOrb>
     with SingleTickerProviderStateMixin {
+  static const double _breathFloor = 0.975;
+  static const double _breathRise = 0.055;
+  static const double _glowFloor = 0.18;
+  static const double _glowRise = 0.28;
+  static const double _restingBreath = 0.42;
+  static const double _glowBlur = 48;
+  static const double _glowSpread = 2;
+
   late final AnimationController _breath = AnimationController(
     vsync: this,
-    duration: AppMotion.breath,
+    duration: AppDurations.breath,
   );
 
   @override
@@ -37,7 +51,7 @@ class _FutureSelfOrbState extends State<FutureSelfOrb>
     if (reduceMotion) {
       _breath
         ..stop()
-        ..value = 0.42;
+        ..value = _restingBreath;
       return;
     }
     if (!_breath.isAnimating) {
@@ -53,7 +67,7 @@ class _FutureSelfOrbState extends State<FutureSelfOrb>
 
   @override
   Widget build(BuildContext context) {
-    final double extent = widget.diameter * 2.15;
+    final double extent = widget.diameter * FutureSelfOrb.glowFactor;
     final Widget orb = RepaintBoundary(
       child: SizedBox(
         width: extent,
@@ -61,9 +75,9 @@ class _FutureSelfOrbState extends State<FutureSelfOrb>
         child: AnimatedBuilder(
           animation: _breath,
           builder: (BuildContext context, Widget? child) {
-            final double t = AppMotion.curve.transform(_breath.value);
-            final double scale = 0.975 + (0.055 * t);
-            final double glow = 0.18 + (0.28 * t);
+            final double t = AppDurations.curve.transform(_breath.value);
+            final double scale = _breathFloor + (_breathRise * t);
+            final double glow = _glowFloor + (_glowRise * t);
             return Transform.scale(
               scale: scale,
               child: Stack(
@@ -113,8 +127,8 @@ class _FutureSelfOrbState extends State<FutureSelfOrb>
                       boxShadow: <BoxShadow>[
                         BoxShadow(
                           color: AppColors.orbGlow.withValues(alpha: glow),
-                          blurRadius: 48,
-                          spreadRadius: 2,
+                          blurRadius: _glowBlur,
+                          spreadRadius: _glowSpread,
                         ),
                       ],
                     ),

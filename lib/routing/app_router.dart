@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 
-import '../features/home/home_screen.dart';
+import '../features/home/screens/home_screen.dart';
 
 /// One room for now. Later rituals get their own routes.
 final GoRouter appRouter = GoRouter(

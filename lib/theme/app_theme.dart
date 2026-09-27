@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
-import 'app_typography.dart';
-import 'quiet_scroll_behavior.dart';
-import 'slow_fade_page_transition.dart';
+import 'app_durations.dart';
+import 'app_text_styles.dart';
 
 /// Dark mode is the only theme. Light mode is intentionally absent.
 abstract final class AppTheme {
@@ -37,27 +36,94 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
       canvasColor: AppColors.background,
-      fontFamily: AppTypography.textFamily,
-      textTheme: AppTypography.textTheme.apply(
+      fontFamily: AppTextStyles.textFamily,
+      textTheme: AppTextStyles.textTheme.apply(
         bodyColor: AppColors.textPrimary,
         displayColor: AppColors.textPrimary,
       ),
       splashFactory: NoSplash.splashFactory,
-      splashColor: const Color(0x00000000),
-      highlightColor: const Color(0x00000000),
-      hoverColor: const Color(0x0AF6F1E8),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: AppColors.textPrimary.withValues(alpha: 0.04),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: <TargetPlatform, PageTransitionsBuilder>{
-          TargetPlatform.android: SlowFadePageTransitionsBuilder(),
-          TargetPlatform.iOS: SlowFadePageTransitionsBuilder(),
-          TargetPlatform.macOS: SlowFadePageTransitionsBuilder(),
-          TargetPlatform.windows: SlowFadePageTransitionsBuilder(),
-          TargetPlatform.linux: SlowFadePageTransitionsBuilder(),
-          TargetPlatform.fuchsia: SlowFadePageTransitionsBuilder(),
+          TargetPlatform.android: _SlowFadePageTransitionsBuilder(),
+          TargetPlatform.iOS: _SlowFadePageTransitionsBuilder(),
+          TargetPlatform.macOS: _SlowFadePageTransitionsBuilder(),
+          TargetPlatform.windows: _SlowFadePageTransitionsBuilder(),
+          TargetPlatform.linux: _SlowFadePageTransitionsBuilder(),
+          TargetPlatform.fuchsia: _SlowFadePageTransitionsBuilder(),
         },
       ),
     );
   }
 
-  static const ScrollBehavior scrollBehavior = QuietScrollBehavior();
+  static const ScrollBehavior scrollBehavior = _QuietScrollBehavior();
+}
+
+/// A fade with no slide and no bounce.
+class _SlowFadePageTransitionsBuilder extends PageTransitionsBuilder {
+  const _SlowFadePageTransitionsBuilder();
+
+  @override
+  Duration get transitionDuration => AppDurations.fade;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return _SlowFade(animation: animation, child: child);
+  }
+}
+
+class _SlowFade extends StatefulWidget {
+  const _SlowFade({required this.animation, required this.child});
+
+  final Animation<double> animation;
+  final Widget child;
+
+  @override
+  State<_SlowFade> createState() => _SlowFadeState();
+}
+
+class _SlowFadeState extends State<_SlowFade> {
+  late final CurvedAnimation _opacity = CurvedAnimation(
+    parent: widget.animation,
+    curve: AppDurations.curve,
+    reverseCurve: AppDurations.curve,
+  );
+
+  @override
+  void dispose() {
+    _opacity.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(opacity: _opacity, child: widget.child);
+  }
+}
+
+/// No glow and no bounce. Movement, when it happens, stays quiet.
+class _QuietScrollBehavior extends MaterialScrollBehavior {
+  const _QuietScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics();
+  }
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
 }

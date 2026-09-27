@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_break/app.dart';
 import 'package:loop_break/theme/app_colors.dart';
-import 'package:loop_break/widgets/future_self_orb.dart';
+import 'package:loop_break/features/future_self/widgets/future_self_orb.dart';
 
 void main() {
   testWidgets('home holds a quiet presence', (WidgetTester tester) async {
