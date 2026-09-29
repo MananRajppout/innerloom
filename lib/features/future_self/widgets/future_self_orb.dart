@@ -10,6 +10,7 @@ class FutureSelfOrb extends StatefulWidget {
   const FutureSelfOrb({
     super.key,
     this.diameter = restingDiameter,
+    this.emphasis = 0,
     this.semanticLabel = 'Future Self',
   });
 
@@ -21,6 +22,9 @@ class FutureSelfOrb extends StatefulWidget {
 
   /// Diameter of the core. The glow extends past it.
   final double diameter;
+
+  /// Extra warmth in the glow, from 0 to 1. The breath itself does not change.
+  final double emphasis;
 
   /// Spoken name. Pass an empty string when nearby text already names Future Self.
   final String semanticLabel;
@@ -77,7 +81,11 @@ class _FutureSelfOrbState extends State<FutureSelfOrb>
           builder: (BuildContext context, Widget? child) {
             final double t = AppDurations.curve.transform(_breath.value);
             final double scale = _breathFloor + (_breathRise * t);
-            final double glow = _glowFloor + (_glowRise * t);
+            final double emphasis = widget.emphasis.clamp(0.0, 1.0).toDouble();
+            final double glow =
+                ((_glowFloor + (_glowRise * t)) * (1 + emphasis))
+                    .clamp(0.0, 1.0)
+                    .toDouble();
             return Transform.scale(
               scale: scale,
               child: Stack(

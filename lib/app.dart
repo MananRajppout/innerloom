@@ -4,8 +4,8 @@ import 'core/constants/app_info.dart';
 import 'routing/app_router.dart';
 import 'theme/app_theme.dart';
 
-class LoopBreakApp extends StatelessWidget {
-  const LoopBreakApp({super.key});
+class InnerloomApp extends StatelessWidget {
+  const InnerloomApp({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -17,5 +17,5 @@ Future<void> main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-  runApp(const ProviderScope(child: LoopBreakApp()));
+  runApp(const ProviderScope(child: InnerloomApp()));
 }
