@@ -69,7 +69,7 @@ class _ChoicePageState extends State<ChoicePage> {
             hint: widget.hint,
             initialValue: widget.initialAnswer,
             onChanged: _changed,
-            onSubmitted: (_) => _submit(),
+            onSubmitted: widget.onSubmit,
           ),
         ],
       ),

@@ -14,10 +14,6 @@ import 'package:loop_break/theme/app_theme.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
-    appRouter.go('/');
-  });
-
   Future<void> settlePage(WidgetTester tester) async {
     await tester.pump();
     await tester.pump(AppDurations.fade);
@@ -270,10 +266,6 @@ void main() {
     await tester.enterText(find.byType(TextField), '   ');
     await tester.pump();
     expect(answer, 'Peace');
-    expect(
-      tester.widget<TextField>(find.byType(TextField)).controller!.text,
-      isEmpty,
-    );
 
     await tester.enterText(find.byType(TextField), 'The long evenings');
     await tester.pump();
@@ -291,6 +283,156 @@ void main() {
     await tester.pump();
     await tester.testTextInput.receiveAction(TextInputAction.done);
     expect(submitted, 'Evenings');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a heard introduction does not type again', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const ProviderScope(child: InnerloomApp()));
+    await tester.pump(AppDurations.reveal);
+    await tester.pump(AppDurations.fade);
+    await tester.tap(find.text('Begin').hitTestable());
+    await skipSpeech(tester);
+    await tester.tap(find.text('Continue').hitTestable());
+    await settlePage(tester);
+
+    final bool popped = await tester.binding.handlePopRoute();
+    expect(popped, isTrue);
+    await settlePage(tester);
+
+    expect(find.text("I'm here to walk beside you."), findsOneWidget);
+    expect(find.text('Continue').hitTestable(), findsOneWidget);
+    expect(find.text('Skip').hitTestable(), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('home stays closed until arrival is finished', (
+    WidgetTester tester,
+  ) async {
+    final ProviderContainer container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const InnerloomApp(),
+      ),
+    );
+    container.read(routerProvider).go('/home');
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Future Self'), findsOneWidget);
+    expect(find.text('Today'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a small phone lays the arrival out without overflow', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.view.padding = const FakeViewPadding(top: 24, bottom: 48);
+    tester.view.viewPadding = const FakeViewPadding(top: 24, bottom: 48);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPadding);
+    addTearDown(tester.view.resetViewPadding);
+
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+    final ProviderContainer container = ProviderContainer();
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const InnerloomApp(),
+      ),
+    );
+
+    final OnboardingController controller = container.read(
+      onboardingProvider.notifier,
+    );
+    controller.advance();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+    controller.advance();
+    controller.submitName('Avery');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    tester.view.resetViewInsets();
+    await tester.pump();
+
+    controller.submitWhatMatters('Peace');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    controller.submitCurrentLoop('Overthinking');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    controller.advance();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    controller.chooseMemory(false);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    final bool began = controller.beginToday();
+    expect(began, isTrue);
+    container.read(routerProvider).go('/home');
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Today'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('words being typed stay on screen', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.view.padding = const FakeViewPadding(top: 24, bottom: 48);
+    tester.view.viewPadding = const FakeViewPadding(top: 24, bottom: 48);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPadding);
+    addTearDown(tester.view.resetViewPadding);
+
+    await tester.pumpWidget(const ProviderScope(child: InnerloomApp()));
+    await tester.pump(AppDurations.reveal);
+    await tester.pump(AppDurations.fade);
+    await tester.tap(find.text('Begin').hitTestable());
+    await settlePage(tester);
+
+    const String marker = 'version of you';
+    for (
+      int i = 0;
+      i < 400 && find.textContaining(marker).evaluate().isEmpty;
+      i++
+    ) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.textContaining(marker), findsWidgets);
+    final Rect typed = tester.getRect(find.textContaining(marker).first);
+    expect(typed.bottom, lessThanOrEqualTo(640));
+    expect(typed.top, lessThan(640));
+    expect(typed.bottom, greaterThan(0));
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

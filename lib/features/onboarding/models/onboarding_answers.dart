@@ -7,6 +7,7 @@ class OnboardingAnswers {
     this.currentLoop = '',
     this.mayRemember,
     this.completed = false,
+    this.heard = const <OnboardingStep>{},
   });
 
   final OnboardingStep step;
@@ -18,6 +19,9 @@ class OnboardingAnswers {
   final bool? mayRemember;
   final bool completed;
 
+  /// Spoken steps the person has already heard through.
+  final Set<OnboardingStep> heard;
+
   OnboardingAnswers copyWith({
     OnboardingStep? step,
     String? name,
@@ -26,6 +30,7 @@ class OnboardingAnswers {
     bool? mayRemember,
     bool updateMemory = false,
     bool? completed,
+    Set<OnboardingStep>? heard,
   }) {
     return OnboardingAnswers(
       step: step ?? this.step,
@@ -34,6 +39,7 @@ class OnboardingAnswers {
       currentLoop: currentLoop ?? this.currentLoop,
       mayRemember: updateMemory ? mayRemember : this.mayRemember,
       completed: completed ?? this.completed,
+      heard: heard ?? this.heard,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../../theme/app_durations.dart';
 
@@ -22,6 +23,7 @@ class TypingText extends StatefulWidget {
 }
 
 class _TypingTextState extends State<TypingText> {
+  final GlobalKey _typed = GlobalKey();
   Timer? _timer;
   int _count = 0;
   bool _completed = false;
@@ -37,6 +39,7 @@ class _TypingTextState extends State<TypingText> {
       return;
     }
     _scheduleNext();
+    _followTypedText();
   }
 
   @override
@@ -60,7 +63,38 @@ class _TypingTextState extends State<TypingText> {
         return;
       }
       setState(() => _count += 1);
+      _followTypedText();
       _scheduleNext();
+    });
+  }
+
+  void _followTypedText() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final BuildContext? typed = _typed.currentContext;
+      if (typed == null) {
+        return;
+      }
+      final RenderObject? render = typed.findRenderObject();
+      if (render is! RenderBox || !render.hasSize || !render.attached) {
+        return;
+      }
+      final ScrollableState? scrollable = Scrollable.maybeOf(typed);
+      if (scrollable == null || !scrollable.position.hasContentDimensions) {
+        return;
+      }
+      final ScrollPosition position = scrollable.position;
+      final RevealedOffset revealed = RenderAbstractViewport.of(render)
+          .getOffsetToReveal(render, 1);
+      final double target = revealed.offset
+          .clamp(position.minScrollExtent, position.maxScrollExtent)
+          .toDouble();
+      if ((position.pixels - target).abs() < 1) {
+        return;
+      }
+      position.jumpTo(target);
     });
   }
 
@@ -79,6 +113,7 @@ class _TypingTextState extends State<TypingText> {
     _completed = true;
     if (_count != widget.text.length) {
       setState(() => _count = widget.text.length);
+      _followTypedText();
     }
     final VoidCallback? onComplete = widget.onComplete;
     if (onComplete == null) {
@@ -108,6 +143,7 @@ class _TypingTextState extends State<TypingText> {
               ),
             ),
             Text(
+              key: _typed,
               visible,
               style: widget.style,
               textAlign: TextAlign.center,

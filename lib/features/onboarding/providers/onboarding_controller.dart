@@ -89,6 +89,13 @@ class OnboardingController extends Notifier<OnboardingAnswers> {
     );
   }
 
+  void hear(OnboardingStep step) {
+    if (state.heard.contains(step)) {
+      return;
+    }
+    state = state.copyWith(heard: <OnboardingStep>{...state.heard, step});
+  }
+
   /// Records the end of arrival. False when this step cannot finish yet.
   bool beginToday() {
     if (state.step != OnboardingStep.complete) {

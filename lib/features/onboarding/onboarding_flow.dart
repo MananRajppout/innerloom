@@ -1,13 +1,8 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../theme/app_colors.dart';
 import '../../theme/app_durations.dart';
-import '../../theme/app_spacing.dart';
-import '../future_self/widgets/future_self_orb.dart';
 import 'models/onboarding_answers.dart';
 import 'onboarding_script.dart';
 import 'providers/onboarding_controller.dart';
@@ -15,21 +10,15 @@ import 'screens/arrival_page.dart';
 import 'screens/choice_page.dart';
 import 'screens/name_page.dart';
 import 'screens/spoken_page.dart';
-import 'widgets/animated_orb.dart';
 import 'widgets/minimal_button.dart';
 
-/// One route. The orb stays. Only the words change.
+/// The words of arrival. The orb lives in the shell around this route.
 class OnboardingFlow extends ConsumerWidget {
   const OnboardingFlow({super.key});
 
-  /// Tallest the room should grow, so a wide window still feels held.
-  static const double stageHeight = 720;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final OnboardingStep step = ref.watch(
-      onboardingProvider.select((OnboardingAnswers answers) => answers.step),
-    );
+    final OnboardingAnswers answers = ref.watch(onboardingProvider);
 
     ref.listen<OnboardingStep>(
       onboardingProvider.select((OnboardingAnswers answers) => answers.step),
@@ -42,73 +31,22 @@ class OnboardingFlow extends ConsumerWidget {
       onboardingProvider.notifier,
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      resizeToAvoidBottomInset: true,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppColors.atmosphere),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final bool keyboardOpen =
-                  MediaQuery.viewInsetsOf(context).bottom > 0;
-              final double desired = keyboardOpen
-                  ? AppSpacing.xxxl
-                  : AnimatedOrb.conversationDiameter;
-              final double available =
-                  constraints.maxWidth - (AppSpacing.screen * 2);
-              final double diameter = math.min(
-                desired,
-                available / FutureSelfOrb.glowFactor,
-              );
-              final double stageHeight = math.min(
-                constraints.maxHeight,
-                OnboardingFlow.stageHeight,
-              );
-              return Align(
-                alignment: Alignment.center,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: AppSpacing.content,
-                    maxHeight: stageHeight,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      const SizedBox(height: AppSpacing.lg),
-                      AnimatedOrb(
-                        diameter: diameter,
-                        emphasis: step == OnboardingStep.complete ? 1 : 0,
-                      ),
-                      Expanded(
-                        child: _FadingStep(
-                          step: step,
-                          allowExit: step == OnboardingStep.arrival,
-                          onBack: controller.back,
-                          child: _page(step, controller, ref),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+    return _FadingStep(
+      step: answers.step,
+      allowExit: answers.step == OnboardingStep.arrival,
+      onBack: controller.back,
+      child: _page(answers, controller),
     );
   }
 
-  Widget _page(
-    OnboardingStep step,
-    OnboardingController controller,
-    WidgetRef ref,
-  ) {
-    final OnboardingAnswers answers = ref.read(onboardingProvider);
+  Widget _page(OnboardingAnswers answers, OnboardingController controller) {
+    final OnboardingStep step = answers.step;
     return switch (step) {
       OnboardingStep.arrival => ArrivalPage(onBegin: controller.advance),
       OnboardingStep.introduction => SpokenPage(
         lines: OnboardingScript.introduction,
+        instant: answers.heard.contains(OnboardingStep.introduction),
+        onHeard: () => controller.hear(OnboardingStep.introduction),
         footer: (BuildContext context) {
           return MinimalButton(
             label: 'Continue',
@@ -136,6 +74,8 @@ class OnboardingFlow extends ConsumerWidget {
       ),
       OnboardingStep.promise => SpokenPage(
         lines: OnboardingScript.promise,
+        instant: answers.heard.contains(OnboardingStep.promise),
+        onHeard: () => controller.hear(OnboardingStep.promise),
         footer: (BuildContext context) {
           return MinimalButton(
             label: 'Continue',
@@ -145,6 +85,8 @@ class OnboardingFlow extends ConsumerWidget {
       ),
       OnboardingStep.permission => SpokenPage(
         lines: OnboardingScript.permission,
+        instant: answers.heard.contains(OnboardingStep.permission),
+        onHeard: () => controller.hear(OnboardingStep.permission),
         footer: (BuildContext context) {
           return PermissionActions(
             onYes: () => controller.chooseMemory(true),
@@ -156,6 +98,8 @@ class OnboardingFlow extends ConsumerWidget {
         lines: answers.mayRemember == true
             ? OnboardingScript.thanks
             : OnboardingScript.thanksDeclined,
+        instant: answers.heard.contains(OnboardingStep.complete),
+        onHeard: () => controller.hear(OnboardingStep.complete),
         footer: (BuildContext context) {
           return MinimalButton(
             label: 'Begin Today',

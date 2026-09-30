@@ -10,22 +10,41 @@ import '../widgets/minimal_button.dart';
 
 /// Future Self speaks. Continue appears when the words have arrived.
 class SpokenPage extends StatefulWidget {
-  const SpokenPage({super.key, required this.lines, required this.footer});
+  const SpokenPage({
+    super.key,
+    required this.lines,
+    required this.footer,
+    this.instant = false,
+    this.onHeard,
+  });
 
   final List<FutureSelfLine> lines;
 
   /// Built once the lines are finished, or once they have been skipped.
   final Widget Function(BuildContext context) footer;
 
+  /// A return visit. The words are already known, so they do not type again.
+  final bool instant;
+
+  final VoidCallback? onHeard;
+
   @override
   State<SpokenPage> createState() => _SpokenPageState();
 }
 
 class _SpokenPageState extends State<SpokenPage> {
-  bool _ready = false;
-  bool _skip = false;
+  late bool _ready;
+  late bool _skip;
+
+  @override
+  void initState() {
+    super.initState();
+    _ready = widget.instant;
+    _skip = widget.instant;
+  }
 
   void _finish() {
+    widget.onHeard?.call();
     if (!mounted || _ready) {
       return;
     }
@@ -55,7 +74,6 @@ class _SpokenPageState extends State<SpokenPage> {
   @override
   Widget build(BuildContext context) {
     return ConversationPage(
-      followLatest: true,
       footer: Stack(
         alignment: Alignment.bottomCenter,
         children: <Widget>[

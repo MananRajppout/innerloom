@@ -29,7 +29,6 @@ class ChipSelector extends StatefulWidget {
 class _ChipSelectorState extends State<ChipSelector> {
   late final TextEditingController _custom;
   String? _selected;
-  bool _suppressCustom = false;
 
   @override
   void initState() {
@@ -51,27 +50,22 @@ class _ChipSelectorState extends State<ChipSelector> {
 
   void _select(String option) {
     setState(() => _selected = option);
-    _suppressCustom = true;
     _custom.clear();
-    _suppressCustom = false;
     widget.onChanged(option);
   }
 
   void _onCustom(String value) {
-    if (_suppressCustom) {
-      return;
-    }
     final String trimmed = value.trim();
     if (trimmed.isEmpty) {
-      if (value.isNotEmpty && _selected != null) {
-        _suppressCustom = true;
-        _custom.clear();
-        _suppressCustom = false;
+      if (value.isEmpty && _selected != null) {
+        return;
       }
       widget.onChanged(_selected ?? '');
       return;
     }
-    setState(() => _selected = null);
+    if (_selected != null) {
+      setState(() => _selected = null);
+    }
     widget.onChanged(trimmed);
   }
 

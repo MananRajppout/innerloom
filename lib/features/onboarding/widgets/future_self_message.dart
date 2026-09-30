@@ -25,6 +25,7 @@ class FutureSelfMessage extends StatefulWidget {
 }
 
 class _FutureSelfMessageState extends State<FutureSelfMessage> {
+  final GlobalKey _lastLine = GlobalKey();
   int _index = 0;
   bool _finished = false;
   bool _notified = false;
@@ -45,6 +46,7 @@ class _FutureSelfMessageState extends State<FutureSelfMessage> {
       _pause?.cancel();
       _finished = true;
       _notify();
+      _revealLastLine();
     }
   }
 
@@ -63,6 +65,17 @@ class _FutureSelfMessageState extends State<FutureSelfMessage> {
     }
     _finished = true;
     _notify();
+    _revealLastLine();
+  }
+
+  void _revealLastLine() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final BuildContext? last = _lastLine.currentContext;
+      if (last == null || !last.mounted) {
+        return;
+      }
+      Scrollable.ensureVisible(last, alignment: 1, duration: Duration.zero);
+    });
   }
 
   void _notify() {
@@ -84,6 +97,7 @@ class _FutureSelfMessageState extends State<FutureSelfMessage> {
     if (_index >= widget.lines.length - 1) {
       setState(() => _finished = true);
       _notify();
+      _revealLastLine();
       return;
     }
     final Duration pause = AppDurations.resolve(
@@ -112,6 +126,7 @@ class _FutureSelfMessageState extends State<FutureSelfMessage> {
           if (i > 0) const SizedBox(height: AppSpacing.md),
           if (showAll || i < _index)
             Text(
+              key: i == widget.lines.length - 1 ? _lastLine : null,
               widget.lines[i].text,
               textAlign: TextAlign.center,
               style: style,
