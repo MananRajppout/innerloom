@@ -9,8 +9,12 @@ abstract final class AppColors {
   static const Color backgroundLift = Color(0xFF231F1B);
   static const Color surface = Color(0xFF2C2722);
   static const Color surfaceRaised = Color(0xFF383229);
-  static const Color outline = Color(0xFF4A433A);
-  static const Color outlineSoft = Color(0xFF3A342C);
+
+  /// Quiet taupe that still clears 3:1 on the lifted ground.
+  static const Color outline = Color(0xFF7A6E62);
+
+  /// A step quieter, for resting controls. Still visible on the room.
+  static const Color outlineSoft = Color(0xFF6E6256);
   static const Color shadow = Color(0x40080604);
 
   static const Color textPrimary = Color(0xFFF6F1E8);

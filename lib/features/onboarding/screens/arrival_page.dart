@@ -52,17 +52,18 @@ class _ArrivalPageState extends State<ArrivalPage> {
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     return ConversationPage(
-      footer: _visible
-          ? TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0, end: 1),
-              duration: AppDurations.resolve(context, AppDurations.fade),
-              curve: AppDurations.curve,
-              builder: (BuildContext context, double value, Widget? child) {
-                return Opacity(opacity: value, child: child);
-              },
-              child: MinimalButton(label: 'Begin', onPressed: widget.onBegin),
-            )
-          : const SizedBox(height: 48),
+      footer: ExcludeSemantics(
+        excluding: !_visible,
+        child: IgnorePointer(
+          ignoring: !_visible,
+          child: AnimatedOpacity(
+            opacity: _visible ? 1 : 0,
+            duration: AppDurations.resolve(context, AppDurations.fade),
+            curve: AppDurations.curve,
+            child: MinimalButton(label: 'Begin', onPressed: widget.onBegin),
+          ),
+        ),
+      ),
       child: SizedBox(
         width: double.infinity,
         child: Column(

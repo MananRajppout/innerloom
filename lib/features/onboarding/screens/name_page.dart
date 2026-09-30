@@ -7,17 +7,25 @@ import '../widgets/minimal_button.dart';
 import '../widgets/question_input.dart';
 
 class NamePage extends StatefulWidget {
-  const NamePage({super.key, required this.onSubmit});
+  const NamePage({super.key, required this.onSubmit, this.initialName = ''});
 
   final ValueChanged<String> onSubmit;
+  final String initialName;
 
   @override
   State<NamePage> createState() => _NamePageState();
 }
 
 class _NamePageState extends State<NamePage> {
-  final TextEditingController _name = TextEditingController();
-  bool _hasName = false;
+  late final TextEditingController _name;
+  late bool _hasName;
+
+  @override
+  void initState() {
+    super.initState();
+    _name = TextEditingController(text: widget.initialName);
+    _hasName = widget.initialName.trim().isNotEmpty;
+  }
 
   @override
   void dispose() {

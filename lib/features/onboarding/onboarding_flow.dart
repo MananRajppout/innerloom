@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_durations.dart';
@@ -82,7 +83,9 @@ class OnboardingFlow extends ConsumerWidget {
                       Expanded(
                         child: _FadingStep(
                           step: step,
-                          child: _page(step, controller),
+                          allowExit: step == OnboardingStep.arrival,
+                          onBack: controller.back,
+                          child: _page(step, controller, ref),
                         ),
                       ),
                     ],
@@ -96,7 +99,12 @@ class OnboardingFlow extends ConsumerWidget {
     );
   }
 
-  Widget _page(OnboardingStep step, OnboardingController controller) {
+  Widget _page(
+    OnboardingStep step,
+    OnboardingController controller,
+    WidgetRef ref,
+  ) {
+    final OnboardingAnswers answers = ref.read(onboardingProvider);
     return switch (step) {
       OnboardingStep.arrival => ArrivalPage(onBegin: controller.advance),
       OnboardingStep.introduction => SpokenPage(
@@ -108,17 +116,22 @@ class OnboardingFlow extends ConsumerWidget {
           );
         },
       ),
-      OnboardingStep.name => NamePage(onSubmit: controller.submitName),
+      OnboardingStep.name => NamePage(
+        initialName: answers.name,
+        onSubmit: controller.submitName,
+      ),
       OnboardingStep.whatMatters => ChoicePage(
         question: OnboardingScript.mattersQuestion,
         options: OnboardingScript.matters,
         hint: OnboardingScript.ownWords,
+        initialAnswer: answers.whatMatters,
         onSubmit: controller.submitWhatMatters,
       ),
       OnboardingStep.currentLoop => ChoicePage(
         question: OnboardingScript.loopQuestion,
         options: OnboardingScript.loops,
         hint: OnboardingScript.ownWords,
+        initialAnswer: answers.currentLoop,
         onSubmit: controller.submitCurrentLoop,
       ),
       OnboardingStep.promise => SpokenPage(
@@ -140,11 +153,18 @@ class OnboardingFlow extends ConsumerWidget {
         },
       ),
       OnboardingStep.complete => SpokenPage(
-        lines: OnboardingScript.thanks,
+        lines: answers.mayRemember == true
+            ? OnboardingScript.thanks
+            : OnboardingScript.thanksDeclined,
         footer: (BuildContext context) {
           return MinimalButton(
             label: 'Begin Today',
-            onPressed: controller.beginToday,
+            onPressed: () {
+              if (!controller.beginToday()) {
+                return;
+              }
+              context.go('/home');
+            },
           );
         },
       ),
@@ -156,10 +176,17 @@ class OnboardingFlow extends ConsumerWidget {
 ///
 /// Only one step is mounted, so the screen never speaks twice at once.
 class _FadingStep extends StatefulWidget {
-  const _FadingStep({required this.step, required this.child});
+  const _FadingStep({
+    required this.step,
+    required this.child,
+    required this.allowExit,
+    required this.onBack,
+  });
 
   final OnboardingStep step;
   final Widget child;
+  final bool allowExit;
+  final VoidCallback onBack;
 
   @override
   State<_FadingStep> createState() => _FadingStepState();
@@ -214,7 +241,9 @@ class _FadingStepState extends State<_FadingStep>
   }
 
   void _onStatus(AnimationStatus status) {
-    if (!mounted || status != AnimationStatus.dismissed || _pendingChild == null) {
+    if (!mounted ||
+        status != AnimationStatus.dismissed ||
+        _pendingChild == null) {
       return;
     }
     setState(() {
@@ -236,9 +265,28 @@ class _FadingStepState extends State<_FadingStep>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _opacity,
-      child: KeyedSubtree(key: ValueKey<OnboardingStep>(_step), child: _child),
+    final bool outgoing = _pendingChild != null;
+    return PopScope(
+      canPop: widget.allowExit && !outgoing,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop || outgoing) {
+          return;
+        }
+        widget.onBack();
+      },
+      child: ExcludeSemantics(
+        excluding: outgoing,
+        child: IgnorePointer(
+          ignoring: outgoing,
+          child: FadeTransition(
+            opacity: _opacity,
+            child: KeyedSubtree(
+              key: ValueKey<OnboardingStep>(_step),
+              child: _child,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

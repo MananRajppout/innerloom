@@ -1,10 +1,7 @@
 import '../../../theme/app_durations.dart';
 
 class FutureSelfLine {
-  const FutureSelfLine(
-    this.text, {
-    this.pauseAfter = AppDurations.linePause,
-  });
+  const FutureSelfLine(this.text, {this.pauseAfter = AppDurations.linePause});
 
   final String text;
   final Duration pauseAfter;
@@ -18,20 +15,14 @@ abstract final class OnboardingScript {
     FutureSelfLine(
       "I'm the version of you that's already lived through today.",
     ),
-    FutureSelfLine(
-      "I'm not here to fix you.",
-      pauseAfter: AppDurations.beat,
-    ),
-    FutureSelfLine(
-      "I'm here to walk beside you.",
-      pauseAfter: Duration.zero,
-    ),
+    FutureSelfLine("I'm not here to fix you.", pauseAfter: AppDurations.beat),
+    FutureSelfLine("I'm here to walk beside you.", pauseAfter: Duration.zero),
   ];
 
   static const List<FutureSelfLine> promise = <FutureSelfLine>[
     FutureSelfLine("I won't judge you.", pauseAfter: AppDurations.beat),
     FutureSelfLine("I won't rush you.", pauseAfter: AppDurations.beat),
-    FutureSelfLine("I'll remember what matters."),
+    FutureSelfLine("I'll stay close to what matters."),
     FutureSelfLine(
       "So you don't have to carry everything alone.",
       pauseAfter: Duration.zero,
@@ -49,10 +40,15 @@ abstract final class OnboardingScript {
     FutureSelfLine('Thank you.', pauseAfter: AppDurations.beat),
     FutureSelfLine("I'm glad you're here."),
     FutureSelfLine('Tomorrow...', pauseAfter: AppDurations.beat),
-    FutureSelfLine(
-      "I'll remember today.",
-      pauseAfter: Duration.zero,
-    ),
+    FutureSelfLine("I'll remember today.", pauseAfter: Duration.zero),
+  ];
+
+  /// Same gratitude, without promising to keep the day.
+  static const List<FutureSelfLine> thanksDeclined = <FutureSelfLine>[
+    FutureSelfLine('Thank you.', pauseAfter: AppDurations.beat),
+    FutureSelfLine("I'm glad you're here."),
+    FutureSelfLine('Today stays yours.', pauseAfter: AppDurations.beat),
+    FutureSelfLine("I won't keep it.", pauseAfter: Duration.zero),
   ];
 
   static const String nameQuestion = 'What should I call you?';

@@ -12,19 +12,36 @@ class ChipSelector extends StatefulWidget {
     required this.options,
     required this.hint,
     required this.onChanged,
+    this.onSubmitted,
+    this.initialValue = '',
   });
 
   final List<String> options;
   final String hint;
   final ValueChanged<String> onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final String initialValue;
 
   @override
   State<ChipSelector> createState() => _ChipSelectorState();
 }
 
 class _ChipSelectorState extends State<ChipSelector> {
-  final TextEditingController _custom = TextEditingController();
+  late final TextEditingController _custom;
   String? _selected;
+  bool _suppressCustom = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final String initial = widget.initialValue.trim();
+    if (widget.options.contains(initial)) {
+      _selected = initial;
+      _custom = TextEditingController();
+    } else {
+      _custom = TextEditingController(text: initial);
+    }
+  }
 
   @override
   void dispose() {
@@ -33,19 +50,38 @@ class _ChipSelectorState extends State<ChipSelector> {
   }
 
   void _select(String option) {
-    _custom.clear();
     setState(() => _selected = option);
+    _suppressCustom = true;
+    _custom.clear();
+    _suppressCustom = false;
     widget.onChanged(option);
   }
 
   void _onCustom(String value) {
+    if (_suppressCustom) {
+      return;
+    }
     final String trimmed = value.trim();
-    setState(() {
-      if (trimmed.isNotEmpty) {
-        _selected = null;
+    if (trimmed.isEmpty) {
+      if (value.isNotEmpty && _selected != null) {
+        _suppressCustom = true;
+        _custom.clear();
+        _suppressCustom = false;
       }
-    });
+      widget.onChanged(_selected ?? '');
+      return;
+    }
+    setState(() => _selected = null);
     widget.onChanged(trimmed);
+  }
+
+  void _submitCustom() {
+    final String trimmed = _custom.text.trim();
+    final String answer = trimmed.isNotEmpty ? trimmed : (_selected ?? '');
+    if (answer.isEmpty) {
+      return;
+    }
+    widget.onSubmitted?.call(answer);
   }
 
   @override
@@ -75,6 +111,7 @@ class _ChipSelectorState extends State<ChipSelector> {
           controller: _custom,
           hint: widget.hint,
           onChanged: _onCustom,
+          onSubmitted: _submitCustom,
           style: text.titleLarge,
         ),
       ],

@@ -25,7 +25,27 @@ class OnboardingController extends Notifier<OnboardingAnswers> {
     state = state.copyWith(step: next);
   }
 
+  void back() {
+    final OnboardingStep? previous = switch (state.step) {
+      OnboardingStep.introduction => OnboardingStep.arrival,
+      OnboardingStep.name => OnboardingStep.introduction,
+      OnboardingStep.whatMatters => OnboardingStep.name,
+      OnboardingStep.currentLoop => OnboardingStep.whatMatters,
+      OnboardingStep.promise => OnboardingStep.currentLoop,
+      OnboardingStep.permission => OnboardingStep.promise,
+      OnboardingStep.complete => OnboardingStep.permission,
+      OnboardingStep.arrival => null,
+    };
+    if (previous == null) {
+      return;
+    }
+    state = state.copyWith(step: previous);
+  }
+
   void submitName(String name) {
+    if (state.step != OnboardingStep.name) {
+      return;
+    }
     final String trimmed = name.trim();
     if (trimmed.isEmpty) {
       return;
@@ -34,6 +54,9 @@ class OnboardingController extends Notifier<OnboardingAnswers> {
   }
 
   void submitWhatMatters(String value) {
+    if (state.step != OnboardingStep.whatMatters) {
+      return;
+    }
     final String trimmed = value.trim();
     if (trimmed.isEmpty) {
       return;
@@ -45,17 +68,20 @@ class OnboardingController extends Notifier<OnboardingAnswers> {
   }
 
   void submitCurrentLoop(String value) {
+    if (state.step != OnboardingStep.currentLoop) {
+      return;
+    }
     final String trimmed = value.trim();
     if (trimmed.isEmpty) {
       return;
     }
-    state = state.copyWith(
-      currentLoop: trimmed,
-      step: OnboardingStep.promise,
-    );
+    state = state.copyWith(currentLoop: trimmed, step: OnboardingStep.promise);
   }
 
   void chooseMemory(bool allowed) {
+    if (state.step != OnboardingStep.permission) {
+      return;
+    }
     state = state.copyWith(
       mayRemember: allowed,
       updateMemory: true,
@@ -63,7 +89,14 @@ class OnboardingController extends Notifier<OnboardingAnswers> {
     );
   }
 
-  void beginToday() {
-    state = state.copyWith(completed: true);
+  /// Records the end of arrival. False when this step cannot finish yet.
+  bool beginToday() {
+    if (state.step != OnboardingStep.complete) {
+      return false;
+    }
+    if (!state.completed) {
+      state = state.copyWith(completed: true);
+    }
+    return true;
   }
 }

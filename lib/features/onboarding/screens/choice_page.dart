@@ -12,19 +12,27 @@ class ChoicePage extends StatefulWidget {
     required this.options,
     required this.hint,
     required this.onSubmit,
+    this.initialAnswer = '',
   });
 
   final String question;
   final List<String> options;
   final String hint;
   final ValueChanged<String> onSubmit;
+  final String initialAnswer;
 
   @override
   State<ChoicePage> createState() => _ChoicePageState();
 }
 
 class _ChoicePageState extends State<ChoicePage> {
-  String _answer = '';
+  late String _answer;
+
+  @override
+  void initState() {
+    super.initState();
+    _answer = widget.initialAnswer.trim();
+  }
 
   void _changed(String value) {
     setState(() => _answer = value.trim());
@@ -59,7 +67,9 @@ class _ChoicePageState extends State<ChoicePage> {
           ChipSelector(
             options: widget.options,
             hint: widget.hint,
+            initialValue: widget.initialAnswer,
             onChanged: _changed,
+            onSubmitted: (_) => _submit(),
           ),
         ],
       ),

@@ -10,11 +10,7 @@ import '../widgets/minimal_button.dart';
 
 /// Future Self speaks. Continue appears when the words have arrived.
 class SpokenPage extends StatefulWidget {
-  const SpokenPage({
-    super.key,
-    required this.lines,
-    required this.footer,
-  });
+  const SpokenPage({super.key, required this.lines, required this.footer});
 
   final List<FutureSelfLine> lines;
 
@@ -41,28 +37,42 @@ class _SpokenPageState extends State<SpokenPage> {
     _finish();
   }
 
+  Widget _footerSlot({required bool visible, required Widget child}) {
+    return ExcludeSemantics(
+      excluding: !visible,
+      child: IgnorePointer(
+        ignoring: !visible,
+        child: AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: AppDurations.resolve(context, AppDurations.fade),
+          curve: AppDurations.curve,
+          child: child,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ConversationPage(
-      footer: AnimatedSwitcher(
-        duration: AppDurations.resolve(context, AppDurations.fade),
-        switchInCurve: AppDurations.curve,
-        switchOutCurve: AppDurations.curve,
-        child: _ready
-            ? KeyedSubtree(
-                key: const ValueKey<String>('ready'),
-                child: widget.footer(context),
-              )
-            : TextButton(
-                key: const ValueKey<String>('skip'),
-                onPressed: _skipNow,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textTertiary,
-                  textStyle: Theme.of(context).textTheme.titleSmall,
-                  minimumSize: const Size(48, 48),
-                ),
-                child: const Text('Skip'),
+      followLatest: true,
+      footer: Stack(
+        alignment: Alignment.bottomCenter,
+        children: <Widget>[
+          _footerSlot(
+            visible: !_ready,
+            child: TextButton(
+              onPressed: _skipNow,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textTertiary,
+                textStyle: Theme.of(context).textTheme.titleSmall,
+                minimumSize: const Size(48, 48),
               ),
+              child: const Text('Skip'),
+            ),
+          ),
+          _footerSlot(visible: _ready, child: widget.footer(context)),
+        ],
       ),
       child: FutureSelfMessage(
         lines: widget.lines,

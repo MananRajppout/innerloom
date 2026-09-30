@@ -69,10 +69,10 @@ class _QuestionInputState extends State<QuestionInput> {
         hintText: widget.hint,
         hintStyle: style.copyWith(color: AppColors.textTertiary),
         border: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.outlineSoft),
+          borderSide: BorderSide(color: AppColors.outline),
         ),
         enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.outlineSoft),
+          borderSide: BorderSide(color: AppColors.outline),
         ),
         focusedBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: AppColors.orbMid),
