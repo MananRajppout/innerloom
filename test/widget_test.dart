@@ -137,8 +137,12 @@ void main() {
     await tester.tap(find.text('Begin Today').hitTestable());
     await settlePage(tester);
 
-    expect(find.text('Today'), findsOneWidget);
-    expect(find.text("I'm here."), findsOneWidget);
+    expect(find.textContaining('Avery'), findsOneWidget);
+    expect(
+      find.text("You don't have to solve everything today."),
+      findsOneWidget,
+    );
+    expect(find.text('Today'), findsNothing);
 
     final OnboardingAnswers answers = container.read(onboardingProvider);
     expect(answers.name, 'Avery');
@@ -396,8 +400,9 @@ void main() {
     expect(began, isTrue);
     container.read(routerProvider).go('/home');
     await tester.pump();
-    await tester.pump();
-    expect(find.text('Today'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 10));
+    expect(find.text('How are you arriving today?'), findsOneWidget);
+    expect(find.text('Curious'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
