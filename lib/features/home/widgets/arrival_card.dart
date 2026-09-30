@@ -4,9 +4,10 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_durations.dart';
 import '../../../theme/app_radius.dart';
 import '../../../theme/app_spacing.dart';
+import 'quiet_fade.dart';
 
 /// One word. A tap is the whole choice.
-class ArrivalCard extends StatefulWidget {
+class ArrivalCard extends StatelessWidget {
   const ArrivalCard({
     super.key,
     required this.label,
@@ -19,46 +20,17 @@ class ArrivalCard extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<ArrivalCard> createState() => _ArrivalCardState();
-}
-
-class _ArrivalCardState extends State<ArrivalCard> {
-  double _opacity = 0;
-  bool _armed = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_armed) {
-      return;
-    }
-    _armed = true;
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _opacity = 1;
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() => _opacity = 1);
-      }
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bool selected = widget.selected;
-    return AnimatedOpacity(
-      opacity: _opacity,
-      duration: AppDurations.resolve(context, AppDurations.fade),
-      curve: AppDurations.curve,
+    return QuietFade(
       child: Semantics(
         button: true,
         selected: selected,
-        label: widget.label,
+        label: label,
         child: AnimatedContainer(
           duration: AppDurations.resolve(context, AppDurations.fade),
           curve: AppDurations.curve,
-          constraints: const BoxConstraints(minHeight: AppSpacing.huge),
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 48),
           decoration: BoxDecoration(
             color: selected ? AppColors.surfaceRaised : AppColors.surface,
             borderRadius: AppRadius.borderLg,
@@ -69,17 +41,17 @@ class _ArrivalCardState extends State<ArrivalCard> {
           child: Material(
             type: MaterialType.transparency,
             child: InkWell(
-              onTap: widget.onTap,
+              onTap: onTap,
               borderRadius: AppRadius.borderLg,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.lg,
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
                 ),
                 child: Center(
                   child: ExcludeSemantics(
                     child: Text(
-                      widget.label,
+                      label,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(

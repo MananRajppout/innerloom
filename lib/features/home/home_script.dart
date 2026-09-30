@@ -1,4 +1,5 @@
 import '../../theme/app_durations.dart';
+import 'day_clock.dart';
 
 enum Arrival { calm, heavy, restless, hopeful, drained, focused, curious }
 
@@ -34,26 +35,22 @@ abstract final class HomeScript {
 
   static Duration get responseDelay => AppDurations.linePause;
 
-  static Duration get actionDelay => AppDurations.fade + AppDurations.linePause;
+  /// A returning visit keeps one breath, then the room is simply there.
+  static Duration get returnDelay => AppDurations.beat;
 
   static String greeting(DateTime now) {
-    final int hour = now.hour;
-    if (hour >= 5 && hour < 12) {
-      return 'Good morning';
-    }
-    if (hour >= 12 && hour < 17) {
-      return 'Good afternoon';
-    }
-    return 'Good evening';
+    return switch (DayClock.phase(now)) {
+      DayPhase.morning => 'Good morning',
+      DayPhase.afternoon => 'Good afternoon',
+      DayPhase.evening => 'Good evening',
+    };
   }
 
-  /// Morning through the afternoon. Night once the day has turned.
   static String reflection(DateTime now) {
-    final int hour = now.hour;
-    if (hour >= 5 && hour < 17) {
-      return 'Morning Reflection';
-    }
-    return 'Night Reflection';
+    return switch (DayClock.phase(now)) {
+      DayPhase.evening => 'Night Reflection',
+      DayPhase.morning || DayPhase.afternoon => 'Morning Reflection',
+    };
   }
 
   static String label(Arrival arrival) {
@@ -74,7 +71,7 @@ abstract final class HomeScript {
       Arrival.heavy => "I'm glad you didn't carry it alone.",
       Arrival.restless =>
         "We don't have to slow every thought.\nJust this moment.",
-      Arrival.hopeful => "I've been looking forward to this version of you.",
+      Arrival.hopeful => "I'll meet you here.",
       Arrival.drained => 'You can set it down.',
       Arrival.focused => 'Then this can stay simple.',
       Arrival.curious => 'We can look slowly.',

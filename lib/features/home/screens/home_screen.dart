@@ -9,11 +9,12 @@ import '../../../theme/app_durations.dart';
 import '../../../theme/app_spacing.dart';
 import '../../onboarding/models/onboarding_answers.dart';
 import '../../onboarding/providers/onboarding_controller.dart';
-import '../../onboarding/widgets/minimal_button.dart';
 import '../home_script.dart';
+import '../home_visit.dart';
 import '../widgets/arrival_response.dart';
 import '../widgets/arrival_selector.dart';
 import '../widgets/home_greeting.dart';
+import '../widgets/quiet_fade.dart';
 
 /// The first room after arrival. Words only, under the orb that is already here.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -30,7 +31,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final GlobalKey _responseKey = GlobalKey();
 
   Timer? _responseTimer;
-  Timer? _actionTimer;
 
   bool _opened = false;
   bool _reduce = false;
@@ -39,12 +39,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _shown = 0;
   Arrival? _selected;
   bool _response = false;
-  bool _action = false;
 
   DateTime _now() => widget.now?.call() ?? DateTime.now();
-
-  /// The reflection room is the next room. This screen only shows the door.
-  void _openReflection() {}
 
   @override
   void didChangeDependencies() {
@@ -54,10 +50,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
     _opened = true;
+    final bool returning = ref.read(homeVisitProvider);
     if (_reduce) {
       _sentence = true;
       _question = true;
       _shown = HomeScript.arrivals.length;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _markSeen();
+        }
+      });
+      return;
+    }
+    if (returning) {
+      _opening.add(
+        Timer(HomeScript.returnDelay, () {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _sentence = true;
+            _question = true;
+            _shown = HomeScript.arrivals.length;
+          });
+          _markSeen();
+        }),
+      );
       return;
     }
     _opening.add(
@@ -75,10 +93,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }),
     );
     for (var i = 0; i < HomeScript.arrivals.length; i++) {
+      final int index = i;
       _opening.add(
-        Timer(HomeScript.cardsDelay + (HomeScript.cardStagger * i), () {
-          if (mounted) {
-            setState(() => _shown = i + 1);
+        Timer(HomeScript.cardsDelay + (HomeScript.cardStagger * index), () {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _shown = index + 1);
+          if (index == HomeScript.arrivals.length - 1) {
+            _markSeen();
           }
         }),
       );
@@ -91,65 +114,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       timer.cancel();
     }
     _responseTimer?.cancel();
-    _actionTimer?.cancel();
     super.dispose();
   }
 
+  void _markSeen() {
+    ref.read(homeVisitProvider.notifier).mark();
+  }
+
   void _choose(Arrival arrival) {
+    final bool alreadyAnswered = _response;
     setState(() {
       _selected = arrival;
       if (_reduce) {
         _response = true;
-        _action = true;
       }
     });
-    if (_reduce) {
-      _reveal(_responseKey, alignment: 1);
-      return;
-    }
-    if (_response) {
-      _reveal(_responseKey, alignment: 1);
+    _markSeen();
+    if (_reduce || alreadyAnswered) {
+      _reveal();
       return;
     }
     _responseTimer?.cancel();
-    _actionTimer?.cancel();
     _responseTimer = Timer(HomeScript.responseDelay, () {
       if (!mounted) {
         return;
       }
       setState(() => _response = true);
-      _reveal(_responseKey, alignment: 0.2);
-      _actionTimer = Timer(HomeScript.actionDelay, () {
-        if (!mounted) {
-          return;
-        }
-        setState(() => _action = true);
-        _reveal(_responseKey, alignment: 1);
-      });
+      _reveal();
     });
   }
 
-  /// Brings the reply into view once it exists. A tap schedules this during
-  /// the current frame, so a missing target waits for the frame after.
-  void _reveal(GlobalKey key, {required double alignment}) {
+  /// Brings the reply into view. A tap schedules this during the current
+  /// frame, so a missing target waits for the frame after.
+  void _reveal() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_show(key, alignment)) {
+      if (_show()) {
         return;
       }
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _show(key, alignment);
-      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _show());
     });
   }
 
-  bool _show(GlobalKey key, double alignment) {
-    final BuildContext? target = key.currentContext;
+  bool _show() {
+    final BuildContext? target = _responseKey.currentContext;
     if (target == null || !target.mounted) {
       return false;
     }
     Scrollable.ensureVisible(
       target,
-      alignment: alignment,
+      alignment: 1,
       duration: AppDurations.resolve(target, AppDurations.fade),
       curve: AppDurations.curve,
     );
@@ -182,7 +195,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                _QuietFade(
+                QuietFade(
                   child: HomeGreeting(
                     greeting: HomeScript.greeting(_now()),
                     name: name,
@@ -190,7 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 if (_sentence) ...<Widget>[
                   const SizedBox(height: AppSpacing.lg),
-                  _QuietFade(
+                  QuietFade(
                     child: Text(
                       HomeScript.presence,
                       textAlign: TextAlign.center,
@@ -200,7 +213,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
                 if (_question) ...<Widget>[
                   const SizedBox(height: AppSpacing.xxl),
-                  _QuietFade(
+                  QuietFade(
                     child: Text(
                       HomeScript.question,
                       textAlign: TextAlign.center,
@@ -211,84 +224,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ],
                 if (_shown > 0) ...<Widget>[
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
                   ArrivalSelector(
                     visibleCount: _shown,
                     selected: selected,
                     onSelected: _choose,
                   ),
                 ],
-                if (_response && selected != null)
+                if (_response && selected != null) ...<Widget>[
+                  const SizedBox(height: AppSpacing.xl),
                   KeyedSubtree(
                     key: _responseKey,
-                    child: Column(
-                      children: <Widget>[
-                        const SizedBox(height: AppSpacing.xl),
-                        ArrivalResponse(
-                          key: ValueKey<Arrival>(selected),
-                          text: HomeScript.response(selected),
-                        ),
-                        if (_action) ...<Widget>[
-                          const SizedBox(height: AppSpacing.xl),
-                          Center(
-                            child: _QuietFade(
-                              child: MinimalButton(
-                                label: HomeScript.reflection(_now()),
-                                onPressed: _openReflection,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                    child: ArrivalResponse(
+                      key: ValueKey<Arrival>(selected),
+                      text: HomeScript.response(selected),
                     ),
                   ),
+                ],
               ],
             ),
           ),
         );
       },
-    );
-  }
-}
-
-class _QuietFade extends StatefulWidget {
-  const _QuietFade({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_QuietFade> createState() => _QuietFadeState();
-}
-
-class _QuietFadeState extends State<_QuietFade> {
-  double _opacity = 0;
-  bool _armed = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_armed) {
-      return;
-    }
-    _armed = true;
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _opacity = 1;
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() => _opacity = 1);
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: _opacity,
-      duration: AppDurations.resolve(context, AppDurations.fade),
-      curve: AppDurations.curve,
-      child: widget.child,
     );
   }
 }
