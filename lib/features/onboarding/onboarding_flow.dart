@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../theme/app_colors.dart';
 import '../../theme/app_durations.dart';
+import '../../theme/app_spacing.dart';
 import 'models/onboarding_answers.dart';
 import 'onboarding_script.dart';
 import 'providers/onboarding_controller.dart';
@@ -101,19 +103,55 @@ class OnboardingFlow extends ConsumerWidget {
         instant: answers.heard.contains(OnboardingStep.complete),
         onHeard: () => controller.hear(OnboardingStep.complete),
         footer: (BuildContext context) {
-          return MinimalButton(
-            label: 'Begin Today',
-            onPressed: () async {
-              final bool began = await controller.beginToday();
-              if (!began || !context.mounted) {
-                return;
-              }
-              context.go('/home');
-            },
-          );
+          return _BeginToday(onBegin: controller.beginToday);
         },
       ),
     };
+  }
+}
+
+/// Begin Today. A failed write stays here, with the answers still held.
+class _BeginToday extends StatefulWidget {
+  const _BeginToday({required this.onBegin});
+
+  final Future<bool> Function() onBegin;
+
+  @override
+  State<_BeginToday> createState() => _BeginTodayState();
+}
+
+class _BeginTodayState extends State<_BeginToday> {
+  bool _failed = false;
+
+  Future<void> _press() async {
+    final bool began = await widget.onBegin();
+    if (!mounted) {
+      return;
+    }
+    if (!began) {
+      setState(() => _failed = true);
+      return;
+    }
+    context.go('/home');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        if (_failed) ...<Widget>[
+          Text(
+            "Couldn't save your progress. Please try again.",
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.error),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        MinimalButton(label: 'Begin Today', onPressed: () => _press()),
+      ],
+    );
   }
 }
 

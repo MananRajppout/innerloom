@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_break/app.dart';
 import 'package:loop_break/features/home/day_clock.dart';
 import 'package:loop_break/features/home/home_script.dart';
+import 'package:loop_break/features/home/home_day.dart';
 import 'package:loop_break/features/home/screens/home_screen.dart';
 import 'package:loop_break/features/onboarding/providers/onboarding_controller.dart';
 import 'package:loop_break/features/reflection/reflection_script.dart';
@@ -279,10 +280,13 @@ void main() {
         child: MaterialApp(
           theme: AppTheme.dark,
           scrollBehavior: AppTheme.scrollBehavior,
-          home: Scaffold(body: HomeScreen(now: () => now)),
+          home: Scaffold(body: HomeDay(now: () => now)),
         ),
       ),
     );
+    await tester.tap(find.text('Calm'));
+    await tester.pump();
+    expect(find.text('Then we can stay with this.'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Morning Reflection'), 200);
     await tester.tap(find.text('Morning Reflection'));
     await tester.pump();
@@ -293,10 +297,24 @@ void main() {
     await tester.tap(find.text(ReflectionScript.leave));
     await tester.pump();
     expect(find.text('Morning Reflection'), findsNothing);
+    expect(find.text('Then we can stay with this.'), findsOneWidget);
+    expect(find.text('Enough for today.'), findsNothing);
 
-    now = DateTime(2026, 10, 12, 9);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
+    expect(find.text('Then we can stay with this.'), findsOneWidget);
+    expect(find.text('Morning Reflection'), findsNothing);
+
+    final Duration untilTomorrow = DateTime(
+      now.year,
+      now.month,
+      now.day + 1,
+    ).difference(now);
+    now = DateTime(2026, 10, 12, 9);
+    await tester.pump(untilTomorrow);
+    await tester.pump();
+    expect(find.text('Then we can stay with this.'), findsNothing);
+    expect(find.text('Enough for today.'), findsNothing);
     expect(find.text('Morning Reflection'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());

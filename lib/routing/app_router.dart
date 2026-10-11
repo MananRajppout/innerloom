@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/future_self/widgets/presence_shell.dart';
-import '../features/home/screens/home_screen.dart';
+import '../features/home/home_day.dart';
 import '../features/onboarding/onboarding_flow.dart';
 import '../features/onboarding/providers/onboarding_controller.dart';
 
@@ -47,7 +47,7 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
           GoRoute(
             path: '/home',
             name: 'home',
-            builder: (context, state) => const HomeScreen(),
+            builder: (context, state) => const HomeDay(),
           ),
         ],
       ),

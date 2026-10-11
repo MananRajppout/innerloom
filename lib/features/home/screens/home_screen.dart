@@ -28,8 +28,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen>
-    with WidgetsBindingObserver {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final List<Timer> _opening = <Timer>[];
   final GlobalKey _responseKey = GlobalKey();
 
@@ -44,16 +43,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   bool _response = false;
   bool _reflecting = false;
   bool _replyReady = false;
-  DateTime? _finishedOn;
+  bool _finished = false;
   String _draft = '';
 
   DateTime _now() => widget.now?.call() ?? ref.read(clockProvider)();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
 
   @override
   void didChangeDependencies() {
@@ -123,19 +116,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     for (final Timer timer in _opening) {
       timer.cancel();
     }
     _responseTimer?.cancel();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _releaseStaleRitual();
-    }
   }
 
   void _markSeen() {
@@ -190,28 +175,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return true;
   }
 
-  bool _closedToday() {
-    final DateTime? finished = _finishedOn;
-    return finished != null && DayClock.sameDay(finished, _now());
-  }
-
   bool _morningDoor() {
-    return !_closedToday() &&
+    return !_finished &&
         DayClock.phase(_now()) != DayPhase.evening &&
         _shown == HomeScript.arrivals.length;
-  }
-
-  /// A finished ritual belongs to the day it ended. The next morning opens again.
-  void _releaseStaleRitual() {
-    if (_finishedOn == null || _closedToday()) {
-      return;
-    }
-    setState(() {
-      _finishedOn = null;
-      _draft = '';
-      _replyReady = false;
-      _reflecting = false;
-    });
   }
 
   void _closeReflection(bool finished) {
@@ -223,15 +190,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       _replyReady = false;
       if (finished) {
         _draft = '';
-        final DateTime now = _now();
-        _finishedOn = DateTime(now.year, now.month, now.day);
+        _finished = true;
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    _releaseStaleRitualIfNeeded();
     return PopScope(
       canPop: !_reflecting,
       onPopInvokedWithResult: (bool didPop, Object? result) {
@@ -249,17 +214,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             )
           : _room(context),
     );
-  }
-
-  void _releaseStaleRitualIfNeeded() {
-    if (_finishedOn == null || _closedToday()) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _releaseStaleRitual();
-      }
-    });
   }
 
   Widget _room(BuildContext context) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_break/app.dart';
+import 'package:loop_break/core/persistence/local_memory.dart';
 import 'package:loop_break/features/future_self/widgets/future_self_orb.dart';
 import 'package:loop_break/features/onboarding/models/onboarding_answers.dart';
 import 'package:loop_break/features/onboarding/providers/onboarding_controller.dart';
@@ -451,6 +452,68 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  testWidgets('a failed save stays on arrival and says so', (
+    WidgetTester tester,
+  ) async {
+    final prefs = await openMemory();
+    final ProviderContainer container = ProviderContainer(
+      overrides: [
+        ...memoryScope(prefs),
+        localMemoryProvider.overrideWithValue(_UnsavedMemory(prefs)),
+      ],
+    );
+    addTearDown(container.dispose);
+    final OnboardingController controller = container.read(
+      onboardingProvider.notifier,
+    );
+    controller.advance();
+    controller.advance();
+    controller.submitName('Avery');
+    controller.submitWhatMatters('Peace');
+    controller.submitCurrentLoop('The long evenings');
+    controller.advance();
+    controller.chooseMemory(true);
+    controller.hear(OnboardingStep.complete);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const InnerloomApp(),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.text("Couldn't save your progress. Please try again."),
+      findsNothing,
+    );
+    await tester.tap(find.text('Begin Today'));
+    await tester.pump();
+
+    expect(
+      find.text("Couldn't save your progress. Please try again."),
+      findsOneWidget,
+    );
+    expect(find.text("I'll remember today."), findsOneWidget);
+    expect(find.text('How are you arriving today?'), findsNothing);
+    final OnboardingAnswers answers = container.read(onboardingProvider);
+    expect(answers.name, 'Avery');
+    expect(answers.whatMatters, 'Peace');
+    expect(answers.currentLoop, 'The long evenings');
+    expect(answers.completed, isFalse);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+}
+
+class _UnsavedMemory extends LocalMemory {
+  _UnsavedMemory(super.prefs);
+
+  @override
+  Future<void> remember(OnboardingAnswers answers) {
+    throw StateError('disk');
+  }
 }
 
 Future<void> pumpInnerloom(WidgetTester tester) async {
