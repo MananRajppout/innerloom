@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'quiet_fade.dart';
+import '../../../ui/quiet_fade.dart';
 
 /// One reply from Future Self, after the person says how they arrived.
 class ArrivalResponse extends StatelessWidget {

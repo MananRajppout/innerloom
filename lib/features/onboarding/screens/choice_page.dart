@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_spacing.dart';
+import '../../../ui/conversation_page.dart';
+import '../../../ui/minimal_button.dart';
 import '../widgets/chip_selector.dart';
-import '../widgets/conversation_page.dart';
-import '../widgets/minimal_button.dart';
 
 class ChoicePage extends StatefulWidget {
   const ChoicePage({

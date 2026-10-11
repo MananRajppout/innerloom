@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_durations.dart';
+import '../theme/app_durations.dart';
 
 /// A slow fade in. Later rebuilds do not play it again.
 class QuietFade extends StatefulWidget {

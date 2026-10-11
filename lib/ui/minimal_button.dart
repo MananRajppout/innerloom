@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_colors.dart';
-import '../../../theme/app_radius.dart';
-import '../../../theme/app_spacing.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
 
 /// An outline only. Nothing about it asks to be the loudest thing on screen.
 class MinimalButton extends StatelessWidget {
@@ -21,7 +21,9 @@ class MinimalButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: ButtonStyle(
-        foregroundColor: WidgetStateProperty.resolveWith((Set<WidgetState> states) {
+        foregroundColor: WidgetStateProperty.resolveWith((
+          Set<WidgetState> states,
+        ) {
           if (states.contains(WidgetState.disabled)) {
             return AppColors.textTertiary;
           }

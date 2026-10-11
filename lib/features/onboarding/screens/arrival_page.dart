@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_durations.dart';
 import '../../../theme/app_spacing.dart';
-import '../widgets/conversation_page.dart';
-import '../widgets/minimal_button.dart';
+import '../../../ui/conversation_page.dart';
+import '../../../ui/minimal_button.dart';
 
 /// The room, before anything is asked.
 class ArrivalPage extends StatefulWidget {

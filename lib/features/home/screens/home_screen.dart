@@ -16,7 +16,7 @@ import '../home_visit.dart';
 import '../widgets/arrival_response.dart';
 import '../widgets/arrival_selector.dart';
 import '../widgets/home_greeting.dart';
-import '../widgets/quiet_fade.dart';
+import '../../../ui/quiet_fade.dart';
 
 /// The first room after arrival. Words only, under the orb that is already here.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -42,6 +42,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Arrival? _selected;
   bool _response = false;
   bool _reflecting = false;
+  bool _reflectionFinished = false;
+  String _draft = '';
 
   DateTime _now() => widget.now?.call() ?? ref.read(clockProvider)();
 
@@ -173,7 +175,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   bool _morningDoor() {
-    return DayClock.phase(_now()) != DayPhase.evening &&
+    return !_reflectionFinished &&
+        DayClock.phase(_now()) != DayPhase.evening &&
         _shown == HomeScript.arrivals.length;
   }
 
@@ -189,10 +192,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
       child: _reflecting
           ? ReflectionScreen(
+              draft: _draft,
+              onDraft: (String value) => _draft = value,
               onLeave: () {
-                if (mounted) {
-                  setState(() => _reflecting = false);
+                if (!mounted) {
+                  return;
                 }
+                setState(() {
+                  _draft = '';
+                  _reflecting = false;
+                  _reflectionFinished = true;
+                });
               },
             )
           : _room(context),
@@ -264,31 +274,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: AppSpacing.xl),
                   KeyedSubtree(
                     key: _responseKey,
-                    child: ArrivalResponse(
-                      key: ValueKey<Arrival>(selected),
-                      text: HomeScript.response(selected),
+                    child: Column(
+                      children: <Widget>[
+                        ArrivalResponse(
+                          key: ValueKey<Arrival>(selected),
+                          text: HomeScript.response(selected),
+                        ),
+                        if (_morningDoor()) _reflectionDoor(text),
+                      ],
                     ),
                   ),
                 ],
-                if (_morningDoor()) ...<Widget>[
-                  const SizedBox(height: AppSpacing.xxl),
-                  QuietFade(
-                    child: TextButton(
-                      onPressed: () => setState(() => _reflecting = true),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        textStyle: text.bodyLarge,
-                        minimumSize: const Size(48, 48),
-                      ),
-                      child: Text(HomeScript.reflection(_now())),
-                    ),
-                  ),
-                ],
+                if (_morningDoor() && !_response) _reflectionDoor(text),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _reflectionDoor(TextTheme text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: QuietFade(
+        child: TextButton(
+          onPressed: () => setState(() => _reflecting = true),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.textSecondary,
+            textStyle: text.bodyLarge,
+            minimumSize: const Size(48, 48),
+          ),
+          child: Text(HomeScript.reflection(_now())),
+        ),
+      ),
     );
   }
 }

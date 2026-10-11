@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_colors.dart';
-import '../../../theme/app_durations.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_durations.dart';
 
 /// One field. No label. The hint is the only instruction.
 class QuestionInput extends StatefulWidget {
@@ -16,6 +16,7 @@ class QuestionInput extends StatefulWidget {
     this.textInputAction = TextInputAction.done,
     this.minLines = 1,
     this.maxLines = 1,
+    this.bringIntoView = true,
     this.style,
     this.autofillHints,
   });
@@ -29,6 +30,9 @@ class QuestionInput extends StatefulWidget {
   final TextInputAction textInputAction;
   final int minLines;
   final int maxLines;
+
+  /// Keeps a short answer near the keyboard. A long page should stay still.
+  final bool bringIntoView;
   final TextStyle? style;
   final Iterable<String>? autofillHints;
 
@@ -72,7 +76,7 @@ class _QuestionInputState extends State<QuestionInput> {
       enableSuggestions: widget.keyboardType != TextInputType.name,
       onChanged: widget.onChanged,
       onSubmitted: (_) => widget.onSubmitted?.call(),
-      onTap: _keepInView,
+      onTap: widget.bringIntoView ? _keepInView : null,
       decoration: InputDecoration(
         hintText: widget.hint,
         hintStyle: style.copyWith(color: AppColors.textTertiary),

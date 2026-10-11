@@ -4,7 +4,7 @@ import '../../../theme/app_colors.dart';
 import '../../../theme/app_durations.dart';
 import '../../../theme/app_radius.dart';
 import '../../../theme/app_spacing.dart';
-import 'quiet_fade.dart';
+import '../../../ui/quiet_fade.dart';
 
 /// One word. A tap is the whole choice.
 class ArrivalCard extends StatelessWidget {

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_radius.dart';
 import '../../../theme/app_spacing.dart';
-import 'question_input.dart';
+import '../../../ui/question_input.dart';
 
 /// One answer, either from a chip or from the person's own words.
 class ChipSelector extends StatefulWidget {

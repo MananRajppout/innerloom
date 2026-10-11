@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_durations.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../ui/conversation_page.dart';
+import '../../../ui/minimal_button.dart';
 import '../onboarding_script.dart';
-import '../widgets/conversation_page.dart';
 import '../widgets/future_self_message.dart';
-import '../widgets/minimal_button.dart';
 
 /// Future Self speaks. Continue appears when the words have arrived.
 class SpokenPage extends StatefulWidget {

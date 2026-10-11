@@ -3,17 +3,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_durations.dart';
 import '../../theme/app_spacing.dart';
-import '../home/widgets/quiet_fade.dart';
-import '../onboarding/widgets/conversation_page.dart';
-import '../onboarding/widgets/minimal_button.dart';
-import '../onboarding/widgets/question_input.dart';
+import '../../ui/conversation_page.dart';
+import '../../ui/minimal_button.dart';
+import '../../ui/question_input.dart';
+import '../../ui/quiet_fade.dart';
 import 'reflection_script.dart';
 
 /// One question, one answer, one reply. Then it is finished.
 class ReflectionScreen extends StatefulWidget {
-  const ReflectionScreen({super.key, required this.onLeave});
+  const ReflectionScreen({
+    super.key,
+    required this.draft,
+    required this.onDraft,
+    required this.onLeave,
+  });
 
+  /// Words from earlier in this visit. Nothing is written to disk.
+  final String draft;
+  final ValueChanged<String> onDraft;
   final VoidCallback onLeave;
 
   @override
@@ -21,14 +30,23 @@ class ReflectionScreen extends StatefulWidget {
 }
 
 class _ReflectionScreenState extends State<ReflectionScreen> {
-  final TextEditingController _words = TextEditingController();
+  late final TextEditingController _words;
+  final GlobalKey _replyKey = GlobalKey();
 
   Timer? _reply;
   bool _reduce = false;
   bool _hasWords = false;
   bool _offered = false;
   bool _heard = false;
+  bool _left = false;
   String _kept = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _words = TextEditingController(text: widget.draft);
+    _hasWords = widget.draft.trim().isNotEmpty;
+  }
 
   @override
   void didChangeDependencies() {
@@ -38,12 +56,16 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
 
   @override
   void dispose() {
+    if (!_left) {
+      widget.onDraft(_words.text);
+    }
     _reply?.cancel();
     _words.dispose();
     super.dispose();
   }
 
   void _changed(String value) {
+    widget.onDraft(value);
     final bool hasWords = value.trim().isNotEmpty;
     if (hasWords == _hasWords) {
       return;
@@ -65,6 +87,7 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
       }
     });
     if (_reduce) {
+      _revealReply();
       return;
     }
     _reply = Timer(ReflectionScript.replyDelay, () {
@@ -72,6 +95,29 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
         return;
       }
       setState(() => _heard = true);
+      _revealReply();
+    });
+  }
+
+  void _leave() {
+    _left = true;
+    widget.onDraft('');
+    widget.onLeave();
+  }
+
+  /// Brings the reply into view once it exists. The page stays still until then.
+  void _revealReply() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final BuildContext? target = _replyKey.currentContext;
+      if (target == null || !target.mounted) {
+        return;
+      }
+      Scrollable.ensureVisible(
+        target,
+        alignment: 1,
+        duration: AppDurations.resolve(target, AppDurations.fade),
+        curve: AppDurations.curve,
+      );
     });
   }
 
@@ -104,16 +150,20 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
               textInputAction: TextInputAction.newline,
               minLines: 1,
               maxLines: 8,
+              bringIntoView: false,
               style: text.headlineSmall,
               onChanged: _changed,
             ),
           if (_heard) ...<Widget>[
             const SizedBox(height: AppSpacing.xl),
-            QuietFade(
-              child: Text(
-                ReflectionScript.response,
-                textAlign: TextAlign.center,
-                style: text.headlineSmall,
+            KeyedSubtree(
+              key: _replyKey,
+              child: QuietFade(
+                child: Text(
+                  ReflectionScript.response,
+                  textAlign: TextAlign.center,
+                  style: text.headlineSmall,
+                ),
               ),
             ),
           ],
@@ -124,10 +174,7 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
 
   Widget? _footer() {
     if (_heard) {
-      return MinimalButton(
-        label: ReflectionScript.leave,
-        onPressed: widget.onLeave,
-      );
+      return MinimalButton(label: ReflectionScript.leave, onPressed: _leave);
     }
     if (!_offered && _hasWords) {
       return MinimalButton(label: ReflectionScript.offer, onPressed: _offer);

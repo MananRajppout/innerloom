@@ -1,8 +1,8 @@
 import '../../theme/app_durations.dart';
 
-/// One morning question, one reply, then the ritual is over.
+/// One question, one reply, then the ritual is over.
 abstract final class ReflectionScript {
-  static const String question = 'What is true for you this morning?';
+  static const String question = 'What is true for you today?';
 
   static const String hint = 'In your own words';
 

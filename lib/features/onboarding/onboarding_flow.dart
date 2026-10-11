@@ -10,7 +10,7 @@ import 'screens/arrival_page.dart';
 import 'screens/choice_page.dart';
 import 'screens/name_page.dart';
 import 'screens/spoken_page.dart';
-import 'widgets/minimal_button.dart';
+import '../../ui/minimal_button.dart';
 
 /// The words of arrival. The orb lives in the shell around this route.
 class OnboardingFlow extends ConsumerWidget {

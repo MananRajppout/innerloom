@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_spacing.dart';
+import '../../../ui/conversation_page.dart';
+import '../../../ui/minimal_button.dart';
+import '../../../ui/question_input.dart';
 import '../onboarding_script.dart';
-import '../widgets/conversation_page.dart';
-import '../widgets/minimal_button.dart';
-import '../widgets/question_input.dart';
 
 class NamePage extends StatefulWidget {
   const NamePage({super.key, required this.onSubmit, this.initialName = ''});
