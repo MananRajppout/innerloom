@@ -228,6 +228,17 @@ void main() {
       if (size.height >= 800) {
         expect(_onScreen(tester, 'Focused', size), isTrue, reason: '$size');
       }
+      if (size.height <= 640) {
+        for (final Arrival arrival in HomeScript.arrivals) {
+          final String label = HomeScript.label(arrival);
+          await tester.scrollUntilVisible(find.text(label), 48);
+          expect(
+            _onScreen(tester, label, size),
+            isTrue,
+            reason: '$size $label',
+          );
+        }
+      }
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(const SizedBox.shrink());

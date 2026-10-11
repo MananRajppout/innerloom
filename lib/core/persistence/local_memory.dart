@@ -57,18 +57,34 @@ class LocalMemory {
     );
   }
 
+  /// Writes the personal answers first and completion last.
+  ///
+  /// A failed write leaves completion unset, so the next launch cannot
+  /// look finished without the answers that were supposed to come with it.
   Future<void> remember(OnboardingAnswers answers) async {
-    await _prefs.setBool(_completed, answers.completed);
-    await _prefs.setBool(_mayRemember, answers.mayRemember == true);
-    if (answers.mayRemember == true) {
-      await _prefs.setString(_name, answers.name);
-      await _prefs.setString(_whatMatters, answers.whatMatters);
-      await _prefs.setString(_currentLoop, answers.currentLoop);
-      return;
+    try {
+      await _commit(_prefs.setBool(_mayRemember, answers.mayRemember == true));
+      if (answers.mayRemember == true) {
+        await _commit(_prefs.setString(_name, answers.name));
+        await _commit(_prefs.setString(_whatMatters, answers.whatMatters));
+        await _commit(_prefs.setString(_currentLoop, answers.currentLoop));
+      } else {
+        await _commit(_prefs.remove(_name));
+        await _commit(_prefs.remove(_whatMatters));
+        await _commit(_prefs.remove(_currentLoop));
+      }
+      await _commit(_prefs.setBool(_completed, answers.completed));
+    } catch (_) {
+      await _prefs.setBool(_completed, false);
+      rethrow;
     }
-    await _prefs.remove(_name);
-    await _prefs.remove(_whatMatters);
-    await _prefs.remove(_currentLoop);
+  }
+
+  Future<void> _commit(Future<bool> write) async {
+    final bool saved = await write;
+    if (!saved) {
+      throw StateError('Local memory could not be saved.');
+    }
   }
 
   Future<void> markHomeSeen() => _prefs.setBool(_homeSeen, true);

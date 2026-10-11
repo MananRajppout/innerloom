@@ -17,12 +17,14 @@ class ReflectionScreen extends StatefulWidget {
     super.key,
     required this.draft,
     required this.onDraft,
+    required this.onReplied,
     required this.onLeave,
   });
 
   /// Words from earlier in this visit. Nothing is written to disk.
   final String draft;
   final ValueChanged<String> onDraft;
+  final VoidCallback onReplied;
   final VoidCallback onLeave;
 
   @override
@@ -56,7 +58,7 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
 
   @override
   void dispose() {
-    if (!_left) {
+    if (!_left && !_heard) {
       widget.onDraft(_words.text);
     }
     _reply?.cancel();
@@ -82,21 +84,23 @@ class _ReflectionScreenState extends State<ReflectionScreen> {
     setState(() {
       _kept = words;
       _offered = true;
-      if (_reduce) {
-        _heard = true;
-      }
     });
     if (_reduce) {
-      _revealReply();
+      _showReply();
       return;
     }
     _reply = Timer(ReflectionScript.replyDelay, () {
       if (!mounted) {
         return;
       }
-      setState(() => _heard = true);
-      _revealReply();
+      _showReply();
     });
+  }
+
+  void _showReply() {
+    widget.onReplied();
+    setState(() => _heard = true);
+    _revealReply();
   }
 
   void _leave() {

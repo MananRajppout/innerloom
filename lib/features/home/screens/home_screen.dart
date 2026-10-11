@@ -28,7 +28,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   final List<Timer> _opening = <Timer>[];
   final GlobalKey _responseKey = GlobalKey();
 
@@ -42,10 +43,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Arrival? _selected;
   bool _response = false;
   bool _reflecting = false;
-  bool _reflectionFinished = false;
+  bool _replyReady = false;
+  DateTime? _finishedOn;
   String _draft = '';
 
   DateTime _now() => widget.now?.call() ?? ref.read(clockProvider)();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void didChangeDependencies() {
@@ -115,11 +123,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     for (final Timer timer in _opening) {
       timer.cancel();
     }
     _responseTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _releaseStaleRitual();
+    }
   }
 
   void _markSeen() {
@@ -174,39 +190,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
+  bool _closedToday() {
+    final DateTime? finished = _finishedOn;
+    return finished != null && DayClock.sameDay(finished, _now());
+  }
+
   bool _morningDoor() {
-    return !_reflectionFinished &&
+    return !_closedToday() &&
         DayClock.phase(_now()) != DayPhase.evening &&
         _shown == HomeScript.arrivals.length;
   }
 
+  /// A finished ritual belongs to the day it ended. The next morning opens again.
+  void _releaseStaleRitual() {
+    if (_finishedOn == null || _closedToday()) {
+      return;
+    }
+    setState(() {
+      _finishedOn = null;
+      _draft = '';
+      _replyReady = false;
+      _reflecting = false;
+    });
+  }
+
+  void _closeReflection(bool finished) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _reflecting = false;
+      _replyReady = false;
+      if (finished) {
+        _draft = '';
+        final DateTime now = _now();
+        _finishedOn = DateTime(now.year, now.month, now.day);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    _releaseStaleRitualIfNeeded();
     return PopScope(
       canPop: !_reflecting,
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (didPop || !_reflecting) {
           return;
         }
-        setState(() => _reflecting = false);
+        _closeReflection(_replyReady);
       },
       child: _reflecting
           ? ReflectionScreen(
               draft: _draft,
               onDraft: (String value) => _draft = value,
-              onLeave: () {
-                if (!mounted) {
-                  return;
-                }
-                setState(() {
-                  _draft = '';
-                  _reflecting = false;
-                  _reflectionFinished = true;
-                });
-              },
+              onReplied: () => _replyReady = true,
+              onLeave: () => _closeReflection(true),
             )
           : _room(context),
     );
+  }
+
+  void _releaseStaleRitualIfNeeded() {
+    if (_finishedOn == null || _closedToday()) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _releaseStaleRitual();
+      }
+    });
   }
 
   Widget _room(BuildContext context) {
@@ -299,7 +352,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       padding: const EdgeInsets.only(top: AppSpacing.lg),
       child: QuietFade(
         child: TextButton(
-          onPressed: () => setState(() => _reflecting = true),
+          onPressed: () => setState(() {
+            _replyReady = false;
+            _reflecting = true;
+          }),
           style: TextButton.styleFrom(
             foregroundColor: AppColors.textSecondary,
             textStyle: text.bodyLarge,

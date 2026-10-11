@@ -97,15 +97,23 @@ class OnboardingController extends Notifier<OnboardingAnswers> {
     state = state.copyWith(heard: <OnboardingStep>{...state.heard, step});
   }
 
-  /// Records the end of arrival. False when this step cannot finish yet.
+  /// Records the end of arrival. False when this step cannot finish yet,
+  /// or when the write does not land.
   Future<bool> beginToday() async {
     if (state.step != OnboardingStep.complete) {
       return false;
     }
-    if (!state.completed) {
-      state = state.copyWith(completed: true);
+    final OnboardingAnswers finished = state.completed
+        ? state
+        : state.copyWith(completed: true);
+    try {
+      await ref.read(localMemoryProvider).remember(finished);
+    } catch (_) {
+      return false;
     }
-    await ref.read(localMemoryProvider).remember(state);
+    if (!state.completed) {
+      state = finished;
+    }
     return true;
   }
 }

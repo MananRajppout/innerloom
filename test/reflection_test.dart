@@ -252,6 +252,53 @@ void main() {
     expect(find.text(ReflectionScript.response), findsOneWidget);
     expect(_replyIsVisible(tester), isTrue);
 
+    final bool popped = await tester.binding.handlePopRoute();
+    expect(popped, isTrue);
+    await tester.pump();
+    expect(find.text('Good morning, Avery.'), findsOneWidget);
+    expect(find.text('Morning Reflection'), findsNothing);
+    expect(find.text(ReflectionScript.response), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('the door returns the next morning without closing the app', (
+    WidgetTester tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+
+    final ProviderContainer container = await _named();
+    addTearDown(container.dispose);
+    DateTime now = DateTime(2026, 10, 11, 9);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.dark,
+          scrollBehavior: AppTheme.scrollBehavior,
+          home: Scaffold(body: HomeScreen(now: () => now)),
+        ),
+      ),
+    );
+    await tester.scrollUntilVisible(find.text('Morning Reflection'), 200);
+    await tester.tap(find.text('Morning Reflection'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'Enough for today.');
+    await tester.pump();
+    await tester.tap(find.text(ReflectionScript.offer));
+    await tester.pump();
+    await tester.tap(find.text(ReflectionScript.leave));
+    await tester.pump();
+    expect(find.text('Morning Reflection'), findsNothing);
+
+    now = DateTime(2026, 10, 12, 9);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(find.text('Morning Reflection'), findsOneWidget);
+
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
