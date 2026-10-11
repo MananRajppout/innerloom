@@ -13,6 +13,9 @@ class QuestionInput extends StatefulWidget {
     this.onSubmitted,
     this.keyboardType = TextInputType.text,
     this.textCapitalization = TextCapitalization.sentences,
+    this.textInputAction = TextInputAction.done,
+    this.minLines = 1,
+    this.maxLines = 1,
     this.style,
     this.autofillHints,
   });
@@ -23,6 +26,9 @@ class QuestionInput extends StatefulWidget {
   final VoidCallback? onSubmitted;
   final TextInputType keyboardType;
   final TextCapitalization textCapitalization;
+  final TextInputAction textInputAction;
+  final int minLines;
+  final int maxLines;
   final TextStyle? style;
   final Iterable<String>? autofillHints;
 
@@ -56,7 +62,9 @@ class _QuestionInputState extends State<QuestionInput> {
       keyboardType: widget.keyboardType,
       textCapitalization: widget.textCapitalization,
       textAlign: TextAlign.center,
-      textInputAction: TextInputAction.done,
+      textInputAction: widget.textInputAction,
+      minLines: widget.minLines,
+      maxLines: widget.maxLines,
       style: style,
       cursorColor: AppColors.orbMid,
       autofillHints: widget.autofillHints,

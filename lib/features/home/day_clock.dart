@@ -1,5 +1,11 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 /// Where the day is. Greeting and reflection both read this.
 enum DayPhase { morning, afternoon, evening }
+
+/// The clock for this launch. Tests can hold the morning still.
+final Provider<DateTime Function()> clockProvider =
+    Provider<DateTime Function()>((Ref ref) => DateTime.now);
 
 abstract final class DayClock {
   static const int morningHour = 5;

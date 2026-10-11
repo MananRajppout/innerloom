@@ -131,13 +131,13 @@ void main() {
     expect(find.text(HomeScript.presence), findsOneWidget);
     expect(find.text(HomeScript.question), findsOneWidget);
     expect(find.text('Curious'), findsOneWidget);
-    expect(find.text('Morning Reflection'), findsNothing);
+    expect(find.text('Morning Reflection'), findsOneWidget);
 
     await tester.tap(find.text('Restless'));
     await tester.pump();
 
     expect(find.text(HomeScript.response(Arrival.restless)), findsOneWidget);
-    expect(find.text('Morning Reflection'), findsNothing);
+    expect(find.text('Morning Reflection'), findsOneWidget);
     expect(find.text('Night Reflection'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -171,7 +171,7 @@ void main() {
     await tester.pump();
 
     expect(find.text(HomeScript.response(Arrival.drained)), findsOneWidget);
-    expect(find.text('Morning Reflection'), findsNothing);
+    expect(find.text('Morning Reflection'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

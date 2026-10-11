@@ -9,6 +9,8 @@ import '../../../theme/app_durations.dart';
 import '../../../theme/app_spacing.dart';
 import '../../onboarding/models/onboarding_answers.dart';
 import '../../onboarding/providers/onboarding_controller.dart';
+import '../../reflection/reflection_screen.dart';
+import '../day_clock.dart';
 import '../home_script.dart';
 import '../home_visit.dart';
 import '../widgets/arrival_response.dart';
@@ -39,8 +41,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _shown = 0;
   Arrival? _selected;
   bool _response = false;
+  bool _reflecting = false;
 
-  DateTime _now() => widget.now?.call() ?? DateTime.now();
+  DateTime _now() => widget.now?.call() ?? ref.read(clockProvider)();
 
   @override
   void didChangeDependencies() {
@@ -169,8 +172,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return true;
   }
 
+  bool _morningDoor() {
+    return DayClock.phase(_now()) != DayPhase.evening &&
+        _shown == HomeScript.arrivals.length;
+  }
+
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_reflecting,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop || !_reflecting) {
+          return;
+        }
+        setState(() => _reflecting = false);
+      },
+      child: _reflecting
+          ? ReflectionScreen(
+              onLeave: () {
+                if (mounted) {
+                  setState(() => _reflecting = false);
+                }
+              },
+            )
+          : _room(context),
+    );
+  }
+
+  Widget _room(BuildContext context) {
     final String name = ref.watch(
       onboardingProvider.select((OnboardingAnswers answers) => answers.name),
     );
@@ -238,6 +267,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: ArrivalResponse(
                       key: ValueKey<Arrival>(selected),
                       text: HomeScript.response(selected),
+                    ),
+                  ),
+                ],
+                if (_morningDoor()) ...<Widget>[
+                  const SizedBox(height: AppSpacing.xxl),
+                  QuietFade(
+                    child: TextButton(
+                      onPressed: () => setState(() => _reflecting = true),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        textStyle: text.bodyLarge,
+                        minimumSize: const Size(48, 48),
+                      ),
+                      child: Text(HomeScript.reflection(_now())),
                     ),
                   ),
                 ],
