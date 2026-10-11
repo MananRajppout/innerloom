@@ -103,8 +103,9 @@ class OnboardingFlow extends ConsumerWidget {
         footer: (BuildContext context) {
           return MinimalButton(
             label: 'Begin Today',
-            onPressed: () {
-              if (!controller.beginToday()) {
+            onPressed: () async {
+              final bool began = await controller.beginToday();
+              if (!began || !context.mounted) {
                 return;
               }
               context.go('/home');

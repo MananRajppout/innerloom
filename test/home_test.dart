@@ -10,6 +10,8 @@ import 'package:loop_break/features/onboarding/providers/onboarding_controller.d
 import 'package:loop_break/routing/app_router.dart';
 import 'package:loop_break/theme/app_theme.dart';
 
+import 'support/memory_harness.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -41,7 +43,7 @@ void main() {
   testWidgets('the first moments are a greeting and one sentence', (
     WidgetTester tester,
   ) async {
-    final ProviderContainer container = _named('Manan');
+    final ProviderContainer container = await _named('Manan');
     addTearDown(container.dispose);
 
     await _pumpHome(
@@ -78,7 +80,7 @@ void main() {
   testWidgets('a choice is answered, then the evening door appears', (
     WidgetTester tester,
   ) async {
-    final ProviderContainer container = _named('Manan');
+    final ProviderContainer container = await _named('Manan');
     addTearDown(container.dispose);
 
     await _pumpHome(
@@ -116,7 +118,7 @@ void main() {
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
-    final ProviderContainer container = _named('Avery');
+    final ProviderContainer container = await _named('Avery');
     addTearDown(container.dispose);
 
     await _pumpHome(
@@ -148,7 +150,9 @@ void main() {
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
-    final ProviderContainer container = ProviderContainer();
+    final ProviderContainer container = ProviderContainer(
+      overrides: memoryScope(await openMemory()),
+    );
     addTearDown(container.dispose);
 
     await _pumpHome(
@@ -174,7 +178,7 @@ void main() {
   });
 
   testWidgets('a return skips the long opening', (WidgetTester tester) async {
-    final ProviderContainer container = _named('Manan');
+    final ProviderContainer container = await _named('Manan');
     addTearDown(container.dispose);
 
     await _pumpHome(
@@ -215,7 +219,7 @@ void main() {
       const Size(360, 640),
       const Size(360, 800),
     ]) {
-      final ProviderContainer container = _arrived();
+      final ProviderContainer container = await _arrived();
       addTearDown(container.dispose);
       await _pumpArrived(tester, container, size);
 
@@ -231,8 +235,10 @@ void main() {
   });
 }
 
-ProviderContainer _named(String name) {
-  final ProviderContainer container = ProviderContainer();
+Future<ProviderContainer> _named(String name) async {
+  final ProviderContainer container = ProviderContainer(
+    overrides: memoryScope(await openMemory()),
+  );
   final OnboardingController controller = container.read(
     onboardingProvider.notifier,
   );
@@ -242,8 +248,8 @@ ProviderContainer _named(String name) {
   return container;
 }
 
-ProviderContainer _arrived() {
-  final ProviderContainer container = _named('Manan');
+Future<ProviderContainer> _arrived() async {
+  final ProviderContainer container = await _named('Manan');
   final OnboardingController controller = container.read(
     onboardingProvider.notifier,
   );
@@ -251,7 +257,7 @@ ProviderContainer _arrived() {
   controller.submitCurrentLoop('The long evenings');
   controller.advance();
   controller.chooseMemory(false);
-  controller.beginToday();
+  await controller.beginToday();
   return container;
 }
 

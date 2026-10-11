@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/persistence/local_memory.dart';
 import '../models/onboarding_answers.dart';
 
-/// In-memory arrival. Nothing is sent anywhere yet.
+/// Arrival for this launch. A finished arrival is restored before the first frame.
 final NotifierProvider<OnboardingController, OnboardingAnswers>
 onboardingProvider = NotifierProvider<OnboardingController, OnboardingAnswers>(
   OnboardingController.new,
@@ -10,7 +11,7 @@ onboardingProvider = NotifierProvider<OnboardingController, OnboardingAnswers>(
 
 class OnboardingController extends Notifier<OnboardingAnswers> {
   @override
-  OnboardingAnswers build() => const OnboardingAnswers();
+  OnboardingAnswers build() => ref.read(localMemoryProvider).restore();
 
   void advance() {
     final OnboardingStep? next = switch (state.step) {
@@ -97,13 +98,14 @@ class OnboardingController extends Notifier<OnboardingAnswers> {
   }
 
   /// Records the end of arrival. False when this step cannot finish yet.
-  bool beginToday() {
+  Future<bool> beginToday() async {
     if (state.step != OnboardingStep.complete) {
       return false;
     }
     if (!state.completed) {
       state = state.copyWith(completed: true);
     }
+    await ref.read(localMemoryProvider).remember(state);
     return true;
   }
 }

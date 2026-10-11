@@ -118,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _markSeen() {
-    ref.read(homeVisitProvider.notifier).mark();
+    unawaited(ref.read(homeVisitProvider.notifier).mark());
   }
 
   void _choose(Arrival arrival) {

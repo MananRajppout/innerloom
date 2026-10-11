@@ -11,6 +11,8 @@ import 'package:loop_break/theme/app_colors.dart';
 import 'package:loop_break/theme/app_durations.dart';
 import 'package:loop_break/theme/app_theme.dart';
 
+import 'support/memory_harness.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -29,7 +31,7 @@ void main() {
   }
 
   testWidgets('arrival waits, then offers Begin', (WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: InnerloomApp()));
+    await pumpInnerloom(tester);
 
     expect(find.text('Future Self'), findsOneWidget);
     expect(find.text("I'm here."), findsOneWidget);
@@ -58,7 +60,7 @@ void main() {
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
-    await tester.pumpWidget(const ProviderScope(child: InnerloomApp()));
+    await pumpInnerloom(tester);
     await tester.pump();
 
     expect(find.text('Begin').hitTestable(), findsOneWidget);
@@ -75,7 +77,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final ProviderContainer container = ProviderContainer();
+    final ProviderContainer container = ProviderContainer(
+      overrides: memoryScope(await openMemory()),
+    );
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
@@ -163,7 +167,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const ProviderScope(child: InnerloomApp()));
+    await pumpInnerloom(tester);
     await tester.pump(AppDurations.reveal);
     await tester.pump(AppDurations.fade);
     await tester.tap(find.text('Begin').hitTestable());
@@ -183,7 +187,7 @@ void main() {
   testWidgets('an outgoing page does not take taps', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: InnerloomApp()));
+    await pumpInnerloom(tester);
     await tester.pump(AppDurations.reveal);
     await tester.pump(AppDurations.fade);
     await tester.tap(find.text('Begin').hitTestable());
@@ -209,7 +213,9 @@ void main() {
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
-    final ProviderContainer container = ProviderContainer();
+    final ProviderContainer container = ProviderContainer(
+      overrides: memoryScope(await openMemory()),
+    );
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
@@ -299,7 +305,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const ProviderScope(child: InnerloomApp()));
+    await pumpInnerloom(tester);
     await tester.pump(AppDurations.reveal);
     await tester.pump(AppDurations.fade);
     await tester.tap(find.text('Begin').hitTestable());
@@ -321,7 +327,9 @@ void main() {
   testWidgets('home stays closed until arrival is finished', (
     WidgetTester tester,
   ) async {
-    final ProviderContainer container = ProviderContainer();
+    final ProviderContainer container = ProviderContainer(
+      overrides: memoryScope(await openMemory()),
+    );
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
@@ -356,7 +364,9 @@ void main() {
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
-    final ProviderContainer container = ProviderContainer();
+    final ProviderContainer container = ProviderContainer(
+      overrides: memoryScope(await openMemory()),
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -396,7 +406,7 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
 
-    final bool began = controller.beginToday();
+    final bool began = await controller.beginToday();
     expect(began, isTrue);
     container.read(routerProvider).go('/home');
     await tester.pump();
@@ -418,7 +428,7 @@ void main() {
     addTearDown(tester.view.resetPadding);
     addTearDown(tester.view.resetViewPadding);
 
-    await tester.pumpWidget(const ProviderScope(child: InnerloomApp()));
+    await pumpInnerloom(tester);
     await tester.pump(AppDurations.reveal);
     await tester.pump(AppDurations.fade);
     await tester.tap(find.text('Begin').hitTestable());
@@ -441,4 +451,13 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
+}
+
+Future<void> pumpInnerloom(WidgetTester tester) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: memoryScope(await openMemory()),
+      child: const InnerloomApp(),
+    ),
+  );
 }

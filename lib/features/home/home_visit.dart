@@ -1,19 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Whether this session has already opened the day.
-///
-/// Nothing is written down. A later restore can set the same flag.
+import '../../core/persistence/local_memory.dart';
+
+/// Whether the opening has already played on this device.
 final NotifierProvider<HomeVisit, bool> homeVisitProvider =
     NotifierProvider<HomeVisit, bool>(HomeVisit.new);
 
 class HomeVisit extends Notifier<bool> {
   @override
-  bool build() => false;
+  bool build() => ref.read(localMemoryProvider).homeSeen;
 
-  void mark() {
+  Future<void> mark() async {
     if (state) {
       return;
     }
     state = true;
+    await ref.read(localMemoryProvider).markHomeSeen();
   }
 }

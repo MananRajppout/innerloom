@@ -7,10 +7,10 @@ import '../features/home/screens/home_screen.dart';
 import '../features/onboarding/onboarding_flow.dart';
 import '../features/onboarding/providers/onboarding_controller.dart';
 
-/// One router for this session.
+/// One router for this launch.
 ///
-/// [OnboardingController] keeps completion in memory. A later restore can set
-/// that same flag, and this redirect will still refuse /home until arrival ends.
+/// Completion is already restored, so the first location is home or arrival.
+/// Home stays closed until then, and a finished arrival does not return there.
 final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
   final ValueNotifier<int> refresh = ValueNotifier<int>(0);
   ref.listen<bool>(
@@ -18,13 +18,18 @@ final Provider<GoRouter> routerProvider = Provider<GoRouter>((Ref ref) {
     (bool? previous, bool next) => refresh.value++,
   );
 
+  final bool completed = ref.read(onboardingProvider).completed;
   final GoRouter router = GoRouter(
-    initialLocation: '/',
+    initialLocation: completed ? '/home' : '/',
     refreshListenable: refresh,
     redirect: (context, GoRouterState state) {
-      final bool completed = ref.read(onboardingProvider).completed;
-      if (state.uri.path == '/home' && !completed) {
+      final bool done = ref.read(onboardingProvider).completed;
+      final String path = state.uri.path;
+      if (path == '/home' && !done) {
         return '/';
+      }
+      if (path == '/' && done) {
+        return '/home';
       }
       return null;
     },

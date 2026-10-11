@@ -3,9 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loop_break/features/onboarding/models/onboarding_answers.dart';
 import 'package:loop_break/features/onboarding/providers/onboarding_controller.dart';
 
+import 'support/memory_harness.dart';
+
 void main() {
-  test('controller methods ignore the wrong step', () {
-    final ProviderContainer container = ProviderContainer();
+  test('controller methods ignore the wrong step', () async {
+    final ProviderContainer container = ProviderContainer(
+      overrides: memoryScope(await openMemory()),
+    );
     addTearDown(container.dispose);
     final OnboardingController controller = container.read(
       onboardingProvider.notifier,
@@ -15,7 +19,7 @@ void main() {
 
     controller.submitName('Avery');
     controller.chooseMemory(true);
-    controller.beginToday();
+    expect(await controller.beginToday(), isFalse);
     controller.back();
 
     expect(read().step, OnboardingStep.arrival);
@@ -53,8 +57,8 @@ void main() {
     controller.chooseMemory(true);
     expect(read().mayRemember, isFalse);
 
-    expect(controller.beginToday(), isTrue);
+    expect(await controller.beginToday(), isTrue);
     expect(read().completed, isTrue);
-    expect(controller.beginToday(), isTrue);
+    expect(await controller.beginToday(), isTrue);
   });
 }
