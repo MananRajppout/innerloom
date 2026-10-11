@@ -24,4 +24,4 @@ flutter build apk --release
 
 The apk is `build/app/outputs/flutter-apk/app-release.apk`.
 
-Without `android/key.properties`, release builds stay on the debug key so `flutter run --release` still works. That apk is not the alpha build.
+Release builds require that keystore and `android/key.properties`. If either is missing, the release build fails. Debug builds are unchanged.

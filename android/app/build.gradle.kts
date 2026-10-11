@@ -12,6 +12,19 @@ val keystoreProperties = Properties()
 val hasReleaseKeystore = keystorePropertiesFile.exists()
 if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+} else {
+    tasks.configureEach {
+        if (name.contains("Release")) {
+            doFirst {
+                throw GradleException(
+                    "Release signing requires android/key.properties. " +
+                        "Copy android/key.properties.example to android/key.properties, " +
+                        "create the keystore at android/app/upload-keystore.jks, " +
+                        "and set both passwords. See README.md.",
+                )
+            }
+        }
+    }
 }
 
 android {
@@ -25,8 +38,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.loopbreak.loop_break"
+        applicationId = "com.innerloom.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -52,10 +64,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (hasReleaseKeystore) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
